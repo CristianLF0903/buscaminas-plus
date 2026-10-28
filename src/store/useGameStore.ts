@@ -14,6 +14,8 @@ export interface GameState {
   startedAt: number | null
   endedAt: number | null
   flagsUsed: number
+  /** Mina que hizo perder, para resaltarla. */
+  explodedId: number | null
 
   newGame: (config: BoardConfig, seed?: number | string) => void
   reveal: (id: number) => void
@@ -38,19 +40,24 @@ function initialState(config: BoardConfig, seed?: number | string) {
     startedAt: null,
     endedAt: null,
     flagsUsed: 0,
+    explodedId: null,
   }
 }
 
 export const useGameStore = create<GameState>()((set, get) => {
   /** Aplica el resultado de una jugada y cierra la partida si terminó. */
-  const apply = ({ board, status }: MoveResult) => {
+  const apply = ({ board, status, revealedIds }: MoveResult) => {
     if (board === get().board) return
     const over = status === 'won' || status === 'lost'
+    const lost = status === 'lost'
     set({
-      board: status === 'lost' ? engine.revealAllMines(board) : board,
+      board: lost ? engine.revealAllMines(board) : board,
       status,
       flagsUsed: countFlags(board),
       endedAt: over ? Date.now() : null,
+      explodedId: lost
+        ? (revealedIds.find((id) => board.cells[id].mineWeight > 0) ?? null)
+        : null,
     })
   }
 

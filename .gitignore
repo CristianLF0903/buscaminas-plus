@@ -29,3 +29,6 @@ CLAUDE.md
 CLAUDE.local.md
 .mcp.json
 graphify-out/
+
+# Playwright MCP
+.playwright-mcp/
