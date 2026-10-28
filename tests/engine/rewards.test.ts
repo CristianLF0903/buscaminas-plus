@@ -110,6 +110,6 @@ describe('calculateReward', () => {
       usedPowerUps: 0,
       isRecord: false,
     })
-    expect(r.total).toBe(36)
+    expect(r.total).toBe(50)
   })
 })

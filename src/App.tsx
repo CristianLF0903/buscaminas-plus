@@ -4,12 +4,12 @@ import CoinBadge from '@/components/hud/CoinBadge'
 
 const Home = lazy(() => import('@/pages/Home'))
 const Classic = lazy(() => import('@/pages/play/Classic'))
+const Daily = lazy(() => import('@/pages/play/Daily'))
 const Shop = lazy(() => import('@/pages/Shop'))
 const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
 
 // Rutas del plan aún sin implementar
 const PENDING: [path: string, title: string][] = [
-  ['/play/daily', 'Reto diario'],
   ['/play/time-attack', 'Contrarreloj'],
   ['/play/endless', 'Infinito'],
   ['/play/puzzle', 'Puzzle'],
@@ -43,6 +43,7 @@ function App() {
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/play/classic" component={Classic} />
+            <Route path="/play/daily" component={Daily} />
             <Route path="/shop" component={Shop} />
             {PENDING.map(([path, title]) => (
               <Route key={path} path={path}>

@@ -8,7 +8,7 @@ export const REWARDS = {
   /** Base por victoria según modo y dificultad. */
   base: {
     classic: { easy: 10, medium: 25, hard: 60, custom: 10 },
-    daily: { default: 30 },
+    daily: { default: 50 },
     puzzle: { default: 15 },
   },
   /** Modos por tableros: monedas por cada tablero resuelto. */
@@ -17,6 +17,8 @@ export const REWARDS = {
     endless: { easy: 5, medium: 12, hard: 30 },
   },
   perStar: 5,
+  /** Reto diario: +5 por día de racha, hasta 10 días. */
+  dailyStreak: { perDay: 5, cap: 10 },
   loss: 2,
   /** Multiplicador extra por ganar sin power-ups (0.2 = +20%). */
   noPowerUpBonus: 0.2,
@@ -32,6 +34,8 @@ export interface RewardInput {
   stars?: number
   /** Tableros resueltos en contrarreloj / infinito. */
   boards?: number
+  /** Racha del reto diario, contando este día. */
+  streak?: number
 }
 
 export interface RewardBreakdown {
@@ -46,7 +50,16 @@ const lookup = (table: Record<string, number>, difficulty: string) =>
 
 /** Monedas por partida: base, bonus sin power-ups y bonus por récord. */
 export function calculateReward(input: RewardInput): RewardBreakdown {
-  const { mode, difficulty, won, usedPowerUps, isRecord, stars, boards } = input
+  const {
+    mode,
+    difficulty,
+    won,
+    usedPowerUps,
+    isRecord,
+    stars,
+    boards,
+    streak,
+  } = input
 
   let base: number
   let succeeded: boolean
@@ -62,10 +75,15 @@ export function calculateReward(input: RewardInput): RewardBreakdown {
     base = won
       ? lookup(REWARDS.base[mode], difficulty) + (stars ?? 0) * REWARDS.perStar
       : REWARDS.loss
+    if (won && mode === 'daily') {
+      const { perDay, cap } = REWARDS.dailyStreak
+      base += perDay * Math.min(streak ?? 0, cap)
+    }
   }
 
+  // El diario no admite power-ups: no hay bonus por no usarlos
   const noPowerUpBonus =
-    succeeded && usedPowerUps === 0
+    succeeded && usedPowerUps === 0 && mode !== 'daily'
       ? Math.round(base * REWARDS.noPowerUpBonus)
       : 0
   const recordBonus = isRecord ? REWARDS.record : 0

@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { POWER_UP_PRICES } from '@/lib/economy/prices'
 import { calculateReward } from '@/lib/economy/rewards'
+import { streakAt } from '@/lib/modes/daily'
+import type { DailyEntry } from '@/lib/modes/daily'
 import type { GameMode, RewardBreakdown } from '@/lib/economy/rewards'
 import { POWER_UP_IDS } from '@/lib/powerups/ids'
 import type { PowerUpId } from '@/lib/powerups/ids'
@@ -34,6 +36,9 @@ export interface GameResult {
   level?: number
   stars?: number
   streak?: number
+  /** Reto diario: fecha UTC del reto y grilla para compartir. */
+  date?: string
+  grid?: string
 }
 
 export interface PlayerState {
@@ -42,6 +47,8 @@ export interface PlayerState {
   /** Clave `modo:dificultad`, ver `recordKey`. */
   records: Record<string, ModeRecord>
   stats: PlayerStats
+  /** Reto diario por fecha UTC: un intento por día. */
+  daily: Record<string, DailyEntry>
 
   addCoins: (amount: number) => void
   /** false (sin cambios) si no alcanza. */
@@ -51,6 +58,8 @@ export interface PlayerState {
   consumePowerUp: (id: PowerUpId) => boolean
   /** Cobra el precio y suma al inventario en una sola actualización. */
   buyPowerUp: (id: PowerUpId) => boolean
+  /** Registra el intento del día. false si ya se jugó (o empezó). */
+  startDaily: (date: string) => boolean
   /** Actualiza récords y stats. */
   submitResult: (result: GameResult) => { isRecord: boolean }
   /** `submitResult` + recompensa + monedas, en una sola actualización. */
@@ -70,6 +79,7 @@ const initialData = () => ({
   coins: 0,
   inventory: emptyInventory(),
   records: {} as Record<string, ModeRecord>,
+  daily: {} as Record<string, DailyEntry>,
   stats: {
     played: 0,
     won: 0,
@@ -173,6 +183,12 @@ export const usePlayerStore = create<PlayerState>()(
         return true
       },
 
+      startDaily: (date) => {
+        if (get().daily[date]) return false
+        set((s) => ({ daily: { ...s.daily, [date]: { finished: false } } }))
+        return true
+      },
+
       submitResult: (result) => {
         const key = recordKey(result.mode, result.difficulty)
         const { record, isRecord } = updateRecord(get().records[key], result)
@@ -183,7 +199,18 @@ export const usePlayerStore = create<PlayerState>()(
         return { isRecord }
       },
 
-      finishGame: (result) => {
+      finishGame: (input) => {
+        let result = input
+        if (input.mode === 'daily' && input.date) {
+          // La racha cuenta este día: primero se guarda la entrada
+          const { date, won, timeMs, grid } = input
+          const entry: DailyEntry = { finished: true, won, grid }
+          if (won) entry.timeMs = timeMs
+          const daily = { ...get().daily, [date]: entry }
+          entry.streak = won ? streakAt(daily, date) : 0
+          set({ daily })
+          result = { ...input, streak: entry.streak }
+        }
         const { isRecord } = get().submitResult(result)
         const reward = calculateReward({ ...result, isRecord })
         get().addCoins(reward.total)
@@ -194,11 +221,12 @@ export const usePlayerStore = create<PlayerState>()(
       name: 'buscaminas-player',
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ coins, inventory, records, stats }) => ({
+      partialize: ({ coins, inventory, records, stats, daily }) => ({
         coins,
         inventory,
         records,
         stats,
+        daily,
       }),
       // Punto de entrada para cambios de esquema futuros (version 2, 3...)
       migrate: (persisted) => persisted as PlayerState,

@@ -116,6 +116,60 @@ describe('usePlayerStore', () => {
     expect(state().coins).toBe(45)
   })
 
+  it('reto diario: un intento por día', () => {
+    expect(state().startDaily('2026-10-28')).toBe(true)
+    expect(state().startDaily('2026-10-28')).toBe(false)
+    expect(state().daily['2026-10-28']).toEqual({ finished: false })
+  })
+
+  it('reto diario: racha y recompensa 50 + 5 × racha', () => {
+    const daily = (date: string, won = true) =>
+      state().finishGame(
+        win({ mode: 'daily', difficulty: 'default', date, won, grid: '🟩' }),
+      )
+    daily('2026-10-26')
+    daily('2026-10-27')
+    const third = daily('2026-10-28')
+    expect(state().daily['2026-10-28']).toMatchObject({
+      finished: true,
+      won: true,
+      streak: 3,
+      timeMs: 60_000,
+      grid: '🟩',
+    })
+    // 50 + 5×3, sin bonus de power-ups (el diario no los admite)
+    expect(third.base).toBe(65)
+    expect(third.noPowerUpBonus).toBe(0)
+    expect(state().records['daily:default'].bestStreak).toBe(3)
+
+    const lost = daily('2026-10-29', false)
+    expect(lost.total).toBe(2)
+    expect(state().daily['2026-10-29'].streak).toBe(0)
+  })
+
+  it('reto diario: la racha tiene tope de 10 días', () => {
+    for (let d = 1; d <= 12; d++) {
+      state().finishGame(
+        win({
+          mode: 'daily',
+          difficulty: 'default',
+          date: `2026-11-${String(d).padStart(2, '0')}`,
+          timeMs: 1e9,
+        }),
+      )
+    }
+    expect(state().daily['2026-11-12'].streak).toBe(12)
+    const r = state().finishGame(
+      win({
+        mode: 'daily',
+        difficulty: 'default',
+        date: '2026-11-13',
+        timeMs: 1e9,
+      }),
+    )
+    expect(r.base).toBe(100)
+  })
+
   it('persiste en localStorage y sobrevive a una recarga', async () => {
     state().addCoins(42)
     state().addPowerUp('shield')

@@ -7,7 +7,14 @@ import { useGameStore } from '@/store/useGameStore'
 import Board from './Board'
 
 /** HUD + tablero + power-ups de la partida actual del store. */
-export default function GameView({ mode }: { mode: GameMode }) {
+export default function GameView({
+  mode,
+  allowReset = true,
+}: {
+  mode: GameMode
+  /** false en modos de un solo intento (reto diario). */
+  allowReset?: boolean
+}) {
   const generating = useGameStore((s) => s.generating)
   const guaranteed = useGameStore((s) => s.guaranteed)
 
@@ -15,7 +22,7 @@ export default function GameView({ mode }: { mode: GameMode }) {
     <div className="flex max-w-full flex-col items-center gap-3 rounded-xl bg-slate-800 p-3 shadow-xl">
       <div className="flex w-full items-center justify-between gap-4">
         <MineCounter />
-        <ResetButton />
+        <ResetButton disabled={!allowReset} />
         <Timer />
       </div>
       <div className="relative max-w-full" aria-busy={generating}>

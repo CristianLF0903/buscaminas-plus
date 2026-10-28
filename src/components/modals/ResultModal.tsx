@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useLocation } from 'wouter'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -43,8 +44,14 @@ function RewardSummary({ reward }: { reward: FinishedReward }) {
 
 export default function ResultModal({
   reward,
+  allowRetry = true,
+  children,
 }: {
   reward: FinishedReward | null
+  /** false en modos de un solo intento (reto diario). */
+  allowRetry?: boolean
+  /** Contenido extra del modo (ej. compartir resultado). */
+  children?: ReactNode
 }) {
   const status = useGameStore((s) => s.status)
   const startedAt = useGameStore((s) => s.startedAt)
@@ -73,10 +80,13 @@ export default function ResultModal({
         <span className="font-mono font-semibold text-emerald-400">{time}</span>
       </p>
       {reward && <RewardSummary key={endedAt} reward={reward} />}
+      {children}
       <div className="flex flex-col gap-2">
-        <Button variant="primary" onClick={reset} autoFocus>
-          Otra vez
-        </Button>
+        {allowRetry && (
+          <Button variant="primary" onClick={reset} autoFocus>
+            Otra vez
+          </Button>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Button onClick={() => setDismissed(endedAt)}>Ver tablero</Button>
           <Button onClick={() => navigate('/')}>Menú</Button>

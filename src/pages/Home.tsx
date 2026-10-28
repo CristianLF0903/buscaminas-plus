@@ -22,7 +22,7 @@ const MODES: Mode[] = [
     icon: '📅',
     title: 'Reto diario',
     description: 'El mismo tablero para todos, cada día.',
-    ready: false,
+    ready: true,
   },
   {
     href: '/play/time-attack',
