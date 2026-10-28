@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import { POWER_UP_PRICES } from '@/lib/economy/prices'
 import { calculateReward } from '@/lib/economy/rewards'
 import type { GameMode, RewardBreakdown } from '@/lib/economy/rewards'
 import { POWER_UP_IDS } from '@/lib/powerups/ids'
@@ -48,6 +49,8 @@ export interface PlayerState {
   addPowerUp: (id: PowerUpId, amount?: number) => void
   /** false si no hay unidades. */
   consumePowerUp: (id: PowerUpId) => boolean
+  /** Cobra el precio y suma al inventario en una sola actualización. */
+  buyPowerUp: (id: PowerUpId) => boolean
   /** Actualiza récords y stats. */
   submitResult: (result: GameResult) => { isRecord: boolean }
   /** `submitResult` + recompensa + monedas, en una sola actualización. */
@@ -156,6 +159,16 @@ export const usePlayerStore = create<PlayerState>()(
         if ((get().inventory[id] ?? 0) <= 0) return false
         set((s) => ({
           inventory: { ...s.inventory, [id]: s.inventory[id] - 1 },
+        }))
+        return true
+      },
+
+      buyPowerUp: (id) => {
+        const price = POWER_UP_PRICES[id]
+        if (get().coins < price) return false
+        set((s) => ({
+          coins: s.coins - price,
+          inventory: { ...s.inventory, [id]: (s.inventory[id] ?? 0) + 1 },
         }))
         return true
       },

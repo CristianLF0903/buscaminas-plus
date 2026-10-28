@@ -35,6 +35,28 @@ describe('usePlayerStore', () => {
     expect(state().inventory.radar).toBe(1)
   })
 
+  it('buyPowerUp cobra y suma al inventario', () => {
+    state().addCoins(100)
+    expect(state().buyPowerUp('radar')).toBe(true)
+    expect(state().coins).toBe(60)
+    expect(state().inventory.radar).toBe(1)
+  })
+
+  it('buyPowerUp falla sin monedas suficientes y no cambia nada', () => {
+    state().addCoins(79)
+    expect(state().buyPowerUp('shield')).toBe(false)
+    expect(state().coins).toBe(79)
+    expect(state().inventory.shield).toBe(0)
+  })
+
+  it('la compra persiste', () => {
+    state().addCoins(20)
+    state().buyPowerUp('hint')
+    const saved = JSON.parse(localStorage.getItem('buscaminas-player')!)
+    expect(saved.state.coins).toBe(0)
+    expect(saved.state.inventory.hint).toBe(1)
+  })
+
   it('submitResult registra mejor tiempo y avisa récord', () => {
     expect(state().submitResult(win({ timeMs: 60_000 })).isRecord).toBe(true)
     expect(state().submitResult(win({ timeMs: 70_000 })).isRecord).toBe(false)
