@@ -5,6 +5,8 @@ import ResultModal from '@/components/modals/ResultModal'
 import Button from '@/components/ui/Button'
 import { buttonClass } from '@/components/ui/buttonStyles'
 import Toggle from '@/components/ui/Toggle'
+import { useGameRewards } from '@/hooks/useGameRewards'
+import type { DescribeResult } from '@/hooks/useGameRewards'
 import {
   CLASSIC_PRESETS,
   CUSTOM_LIMITS,
@@ -17,6 +19,11 @@ import { useGameStore } from '@/store/useGameStore'
 
 const PRESET_KEYS = Object.keys(CLASSIC_PRESETS) as ClassicPreset[]
 
+const describeResult: DescribeResult = (s) => ({
+  mode: 'classic',
+  difficulty: difficultyOf(s.config),
+})
+
 export default function Classic() {
   const newGame = useGameStore((s) => s.newGame)
   const noGuess = useGameStore((s) => s.config.noGuess ?? true)
@@ -28,6 +35,7 @@ export default function Classic() {
     return { width, height, mines }
   })
   const [errors, setErrors] = useState<string[]>([])
+  const reward = useGameRewards(describeResult)
 
   // Partida nueva al entrar (el store puede traer una de otro modo)
   useEffect(() => {
@@ -141,7 +149,7 @@ export default function Classic() {
       )}
 
       <GameView />
-      <ResultModal />
+      <ResultModal reward={reward} />
     </section>
   )
 }

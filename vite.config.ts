@@ -20,6 +20,7 @@ export default defineConfig({
           name: 'engine',
           include: ['tests/**/*.test.ts'],
           environment: 'node',
+          setupFiles: ['tests/setup/storage.ts'],
         },
       },
       {

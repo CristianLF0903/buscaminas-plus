@@ -21,6 +21,8 @@ export interface GameState {
   generating: boolean
   /** Con `noGuess`: si se encontró tablero sin adivinar. `null` = no aplica. */
   guaranteed: boolean | null
+  /** Power-ups usados en la partida (máx. 3); afecta recompensas y estrellas. */
+  usedPowerUps: number
   /** Cambia en cada `newGame`/`reset`; descarta generaciones de partidas viejas. */
   gameId: number
 
@@ -44,6 +46,7 @@ function initialState(config: BoardConfig, seed?: number | string) {
     gameId: ++gameCounter,
     generating: false,
     guaranteed: null,
+    usedPowerUps: 0,
     config,
     // Única fuente de no-determinismo: el motor solo recibe la semilla
     seed: seed ?? Date.now(),

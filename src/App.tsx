@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Link, Route, Switch, useLocation } from 'wouter'
+import CoinBadge from '@/components/hud/CoinBadge'
 
 const Home = lazy(() => import('@/pages/Home'))
 const Classic = lazy(() => import('@/pages/play/Classic'))
@@ -22,7 +23,7 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
-      <header className="flex h-14 items-center px-4">
+      <header className="flex h-14 items-center justify-between gap-4 px-4">
         {/* En el menú el título grande ya hace de logo */}
         {location !== '/' && (
           <Link
@@ -32,6 +33,9 @@ function App() {
             Buscaminas<span className="text-emerald-400">+</span>
           </Link>
         )}
+        <div className="ml-auto">
+          <CoinBadge />
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col items-center px-4 pb-8">
