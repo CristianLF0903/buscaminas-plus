@@ -7,6 +7,15 @@ interface Props {
   exploded: boolean
   /** Partida perdida: se marcan las banderas incorrectas. */
   lost: boolean
+  /** Resultado del Detector sobre esta celda oculta. */
+  detected?: boolean
+  /** Resaltado de la Pista. */
+  hinted?: 'safe' | 'mine'
+}
+
+const HINT_RING: Record<'safe' | 'mine', string> = {
+  safe: 'ring-2 ring-emerald-400 animate-pulse',
+  mine: 'ring-2 ring-rose-400 animate-pulse',
 }
 
 // Clases completas para que Tailwind las detecte
@@ -36,7 +45,7 @@ function label(cell: CellData, lost: boolean): string {
   return cell.adjacent ? String(cell.adjacent) : 'Vacía'
 }
 
-function Cell({ cell, playable, exploded, lost }: Props) {
+function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
   if (!playable && !cell.solid) {
     // Fuera de la máscara: hueco que conserva la posición en la grilla
     return <div aria-hidden className="size-8" />
@@ -50,6 +59,19 @@ function Cell({ cell, playable, exploded, lost }: Props) {
   } else if (!cell.revealed) {
     className = `${BASE} cursor-pointer bg-slate-600 shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),inset_0_2px_0_rgb(255_255_255/0.08)] hover:bg-slate-500 active:bg-slate-700`
     if (cell.flagged) content = lost && !cell.mineWeight ? '❌' : '🚩'
+    else if (detected !== undefined) {
+      content = (
+        <span className={detected ? 'text-rose-300' : 'text-emerald-300'}>
+          {detected ? '!' : '✓'}
+        </span>
+      )
+    }
+    if (detected !== undefined) {
+      className += detected
+        ? ' ring-2 ring-inset ring-rose-500/70'
+        : ' ring-2 ring-inset ring-emerald-500/70'
+    }
+    if (hinted) className += ` ${HINT_RING[hinted]}`
   } else if (cell.mineWeight) {
     className = `${BASE} ${exploded ? 'bg-rose-600' : 'bg-slate-800'}`
     content = (

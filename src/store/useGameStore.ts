@@ -4,6 +4,17 @@ import * as engine from '@/lib/engine/reveal'
 import { generateNoGuessAsync } from '@/lib/engine/workerClient'
 import type { MoveResult } from '@/lib/engine/reveal'
 import type { Board, BoardConfig, GameStatus } from '@/lib/engine/types'
+import {
+  absorbMine,
+  applyRadar,
+  detect,
+  findHint,
+  MAX_POWER_UPS_PER_GAME,
+  TIME_PLUS_MS,
+} from '@/lib/powerups'
+import type { Hint } from '@/lib/powerups'
+import type { PowerUpId } from '@/lib/powerups/ids'
+import { usePlayerStore } from './usePlayerStore'
 
 export interface GameState {
   config: BoardConfig
@@ -25,6 +36,18 @@ export interface GameState {
   usedPowerUps: number
   /** Cambia en cada `newGame`/`reset`; descarta generaciones de partidas viejas. */
   gameId: number
+  /** Power-up esperando que el jugador elija celda (radar, detector). */
+  activePowerUp: PowerUpId | null
+  /** La próxima mina revelada se absorbe. */
+  shieldActive: boolean
+  /** Resultados del detector: id → es mina. */
+  detected: Record<number, boolean>
+  /** Celda resaltada por la Pista. */
+  hint: Hint | null
+  /** Mensaje corto del último power-up (razón de la pista, escudo, etc.). */
+  notice: string | null
+  /** Segundos extra de Tiempo+ (contrarreloj). */
+  timeBonusMs: number
 
   newGame: (config: BoardConfig, seed?: number | string) => void
   /** Asíncrono solo en el primer clic con `config.noGuess`. */
@@ -32,6 +55,14 @@ export interface GameState {
   toggleFlag: (id: number) => void
   chord: (id: number) => void
   reset: () => void
+  /**
+   * Usa un power-up del inventario. Radar y Detector quedan esperando celda
+   * (`activePowerUp`); el resto se aplica ya. false si no se pudo usar.
+   */
+  activatePowerUp: (id: PowerUpId) => boolean
+  /** Aplica el power-up activo sobre una celda. */
+  targetCell: (id: number) => boolean
+  cancelPowerUp: () => void
 }
 
 const DEFAULT_CONFIG: BoardConfig = { width: 9, height: 9, mines: 10 }
@@ -57,13 +88,32 @@ function initialState(config: BoardConfig, seed?: number | string) {
     endedAt: null,
     flagsUsed: 0,
     explodedId: null,
+    activePowerUp: null,
+    shieldActive: false,
+    detected: {},
+    hint: null,
+    notice: null,
+    timeBonusMs: 0,
   }
 }
 
+/** Power-ups que se pueden usar ahora mismo (estado de la partida y límite). */
+export const canUsePowerUps = (s: GameState) =>
+  s.status === 'playing' &&
+  !s.generating &&
+  s.usedPowerUps < MAX_POWER_UPS_PER_GAME
+
 export const useGameStore = create<GameState>()((set, get) => {
   /** Aplica el resultado de una jugada y cierra la partida si terminó. */
-  const apply = ({ board, status, revealedIds }: MoveResult) => {
-    if (board === get().board) return
+  const apply = (result: MoveResult) => {
+    if (result.board === get().board) return
+    let { board, status, revealedIds } = result
+    let notice = null
+    if (status === 'lost' && get().shieldActive) {
+      ;({ board, status, revealedIds } = absorbMine(result))
+      notice = '🛡️ ¡El escudo te salvó! La mina quedó marcada.'
+      set({ shieldActive: false })
+    }
     const over = status === 'won' || status === 'lost'
     const lost = status === 'lost'
     set({
@@ -74,7 +124,18 @@ export const useGameStore = create<GameState>()((set, get) => {
       explodedId: lost
         ? (revealedIds.find((id) => board.cells[id].mineWeight > 0) ?? null)
         : null,
+      // Cualquier jugada invalida la pista anterior
+      hint: null,
+      notice,
+      ...(over ? { activePowerUp: null } : {}),
     })
+  }
+
+  /** Cobra del inventario y cuenta el uso. false si no hay unidades. */
+  const spend = (id: PowerUpId) => {
+    if (!usePlayerStore.getState().consumePowerUp(id)) return false
+    set((s) => ({ usedPowerUps: s.usedPowerUps + 1 }))
+    return true
   }
 
   return {
@@ -148,6 +209,69 @@ export const useGameStore = create<GameState>()((set, get) => {
       const { config, seed, fixedSeed } = get()
       set(initialState(config, fixedSeed ? seed : undefined))
     },
+
+    activatePowerUp: (id) => {
+      const s = get()
+      if (!canUsePowerUps(s)) return false
+      if ((usePlayerStore.getState().inventory[id] ?? 0) <= 0) return false
+
+      switch (id) {
+        case 'radar':
+        case 'detector':
+          // Se cobra al elegir la celda; repetir el botón cancela
+          set({ activePowerUp: s.activePowerUp === id ? null : id })
+          return true
+        case 'shield':
+          if (s.shieldActive || !spend(id)) return false
+          set({
+            shieldActive: true,
+            notice: '🛡️ Escudo activo: la próxima mina no explota.',
+          })
+          return true
+        case 'timePlus':
+          if (!spend(id)) return false
+          set((st) => ({
+            timeBonusMs: st.timeBonusMs + TIME_PLUS_MS,
+            notice: '⏳ +15 segundos',
+          }))
+          return true
+        case 'hint': {
+          const hint = findHint(s.board)
+          if (!hint) {
+            // Sin deducción posible: no se consume
+            set({ notice: '💡 No hay ninguna deducción lógica ahora mismo.' })
+            return false
+          }
+          if (!spend(id)) return false
+          set({ hint, activePowerUp: null, notice: `💡 ${hint.reason}` })
+          return true
+        }
+      }
+    },
+
+    targetCell: (id) => {
+      const s = get()
+      const active = s.activePowerUp
+      if (!active || !canUsePowerUps(s)) return false
+      if (active === 'radar') {
+        if (!s.board.cells[id] || !spend(active)) return false
+        set({ activePowerUp: null })
+        apply(applyRadar(get().board, id))
+        if (get().status === 'playing') set({ notice: '📡 Área despejada.' })
+        return true
+      }
+      // Detector: solo sobre celdas ocultas aún no analizadas
+      const isMine = detect(s.board, id)
+      if (isMine === null || id in s.detected || !spend(active)) return false
+      set((st) => ({
+        activePowerUp: null,
+        detected: { ...st.detected, [id]: isMine },
+        notice: isMine ? '🔍 ¡Es una mina!' : '🔍 Celda segura.',
+      }))
+      return true
+    },
+
+    cancelPowerUp: () => set({ activePowerUp: null }),
   }
 })
 

@@ -1,11 +1,13 @@
 import MineCounter from '@/components/hud/MineCounter'
+import PowerUpBar from '@/components/hud/PowerUpBar'
 import ResetButton from '@/components/hud/ResetButton'
 import Timer from '@/components/hud/Timer'
+import type { GameMode } from '@/lib/economy/rewards'
 import { useGameStore } from '@/store/useGameStore'
 import Board from './Board'
 
-/** HUD + tablero de la partida actual del store. */
-export default function GameView() {
+/** HUD + tablero + power-ups de la partida actual del store. */
+export default function GameView({ mode }: { mode: GameMode }) {
   const generating = useGameStore((s) => s.generating)
   const guaranteed = useGameStore((s) => s.guaranteed)
 
@@ -28,6 +30,7 @@ export default function GameView() {
           </div>
         )}
       </div>
+      <PowerUpBar mode={mode} />
       {guaranteed === false && (
         <p role="note" className="text-center text-xs text-amber-400">
           No se encontró un tablero sin adivinar con esta densidad: puede que

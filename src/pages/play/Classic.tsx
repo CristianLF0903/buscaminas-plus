@@ -148,7 +148,7 @@ export default function Classic() {
         </form>
       )}
 
-      <GameView />
+      <GameView mode="classic" />
       <ResultModal reward={reward} />
     </section>
   )

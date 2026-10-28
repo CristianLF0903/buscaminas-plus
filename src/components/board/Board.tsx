@@ -15,6 +15,9 @@ export default function Board() {
   const board = useGameStore((s) => s.board)
   const status = useGameStore((s) => s.status)
   const explodedId = useGameStore((s) => s.explodedId)
+  const activePowerUp = useGameStore((s) => s.activePowerUp)
+  const detected = useGameStore((s) => s.detected)
+  const hint = useGameStore((s) => s.hint)
   const reveal = useGameStore((s) => s.reveal)
   const toggleFlag = useGameStore((s) => s.toggleFlag)
   const chord = useGameStore((s) => s.chord)
@@ -41,7 +44,13 @@ export default function Board() {
     if (consumeLongPress()) return
     const id = cellId(e.target)
     if (id === null) return
-    const cell = useGameStore.getState().board.cells[id]
+    const state = useGameStore.getState()
+    // Power-up esperando celda: el clic lo aplica en vez de revelar
+    if (state.activePowerUp) {
+      state.targetCell(id)
+      return
+    }
+    const cell = state.board.cells[id]
     if (cell.revealed) chord(id)
     else reveal(id)
   }
@@ -61,7 +70,7 @@ export default function Board() {
       <div
         role="grid"
         aria-label="Tablero"
-        className="grid w-max touch-manipulation gap-0.5 bg-slate-900 p-1 [-webkit-touch-callout:none]"
+        className={`grid w-max touch-manipulation gap-0.5 bg-slate-900 p-1 [-webkit-touch-callout:none] ${activePowerUp ? 'cursor-crosshair outline-2 outline-amber-400 [&_button]:cursor-crosshair' : ''}`}
         style={{ gridTemplateColumns: `repeat(${board.width}, 2rem)` }}
         {...handlers}
         onPointerDown={onPointerDown}
@@ -75,6 +84,8 @@ export default function Board() {
             playable={isPlayable(board, cell.id)}
             exploded={cell.id === explodedId}
             lost={lost}
+            detected={detected[cell.id]}
+            hinted={hint?.id === cell.id ? hint.kind : undefined}
           />
         ))}
       </div>
