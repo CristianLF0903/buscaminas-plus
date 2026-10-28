@@ -14,11 +14,11 @@ export default defineConfig({
   test: {
     projects: [
       {
-        // Motor y stores: TS sin DOM
+        // Motor, modos y stores: TS sin DOM
         extends: true,
         test: {
           name: 'engine',
-          include: ['tests/engine/**/*.test.ts', 'tests/store/**/*.test.ts'],
+          include: ['tests/**/*.test.ts'],
           environment: 'node',
         },
       },
