@@ -22,6 +22,9 @@ export interface Board {
   cells: Cell[]
   /** Lista de adyacencia: `neighbors[id]` son los ids vecinos de la celda. */
   neighbors: number[][]
+  /** `mask[id] === false`: la celda no forma parte del tablero. */
+  mask?: boolean[]
+  /** Número de celdas con mina (una mina doble cuenta como 1). */
   mineCount: number
   flagLimit?: number
 }
