@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { solve } from '@/lib/engine/solver'
 import { elapsedMs, selectMinesLeft, useGameStore } from '@/store/useGameStore'
 
 const state = () => useGameStore.getState()
@@ -88,5 +89,59 @@ describe('elapsedMs', () => {
 
   it('nunca es negativo', () => {
     expect(elapsedMs(2000, null, 1000)).toBe(0)
+  })
+})
+
+describe('useGameStore con noGuess', () => {
+  const config = { width: 9, height: 9, mines: 10, noGuess: true }
+
+  it('el primer clic genera un tablero resoluble sin adivinar', async () => {
+    state().newGame(config, 'ng')
+    const pending = state().reveal(40)
+    expect(state().generating).toBe(true)
+    expect(state().startedAt).toBeNull()
+    await pending
+    expect(state().generating).toBe(false)
+    expect(state().status).toBe('playing')
+    expect(state().startedAt).not.toBeNull()
+    const { board } = state()
+    // El estado ya tiene celdas reveladas; el solver parte de cero
+    expect(solve(board, 40).solved).toBe(true)
+  })
+
+  it('bloquea input mientras genera', async () => {
+    state().newGame(config, 'ng')
+    const pending = state().reveal(40)
+    state().reveal(0)
+    state().toggleFlag(1)
+    await pending
+    expect(state().board.cells[1].flagged).toBe(false)
+  })
+
+  it('descarta la generación si la partida se reinicia', async () => {
+    state().newGame(config, 'ng')
+    const pending = state().reveal(40)
+    state().newGame({ width: 16, height: 16, mines: 40 }, 'otra')
+    await pending
+    expect(state().status).toBe('idle')
+    expect(state().board.cells).toHaveLength(256)
+  })
+
+  it('conserva banderas puestas antes del primer clic', async () => {
+    state().newGame(config, 'ng')
+    state().toggleFlag(0)
+    await state().reveal(40)
+    expect(state().board.cells[0].flagged).toBe(true)
+  })
+})
+
+describe('guaranteed', () => {
+  it('es null sin noGuess y true con un tablero garantizado', async () => {
+    state().newGame({ width: 9, height: 9, mines: 10 }, 'g')
+    state().reveal(40)
+    expect(state().guaranteed).toBeNull()
+    state().newGame({ width: 9, height: 9, mines: 10, noGuess: true }, 'g')
+    await state().reveal(40)
+    expect(state().guaranteed).toBe(true)
   })
 })

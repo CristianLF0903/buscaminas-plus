@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { createEmptyBoard, placeMines } from '@/lib/engine/generate'
 import * as engine from '@/lib/engine/reveal'
+import { generateNoGuessAsync } from '@/lib/engine/workerClient'
 import type { MoveResult } from '@/lib/engine/reveal'
 import type { Board, BoardConfig, GameStatus } from '@/lib/engine/types'
 
@@ -16,9 +17,16 @@ export interface GameState {
   flagsUsed: number
   /** Mina que hizo perder, para resaltarla. */
   explodedId: number | null
+  /** Generando un tablero sin adivinar tras el primer clic: input bloqueado. */
+  generating: boolean
+  /** Con `noGuess`: si se encontró tablero sin adivinar. `null` = no aplica. */
+  guaranteed: boolean | null
+  /** Cambia en cada `newGame`/`reset`; descarta generaciones de partidas viejas. */
+  gameId: number
 
   newGame: (config: BoardConfig, seed?: number | string) => void
-  reveal: (id: number) => void
+  /** Asíncrono solo en el primer clic con `config.noGuess`. */
+  reveal: (id: number) => void | Promise<void>
   toggleFlag: (id: number) => void
   chord: (id: number) => void
   reset: () => void
@@ -29,8 +37,13 @@ const DEFAULT_CONFIG: BoardConfig = { width: 9, height: 9, mines: 10 }
 const countFlags = (board: Board) =>
   board.cells.reduce((n, c) => n + (c.flagged ? 1 : 0), 0)
 
+let gameCounter = 0
+
 function initialState(config: BoardConfig, seed?: number | string) {
   return {
+    gameId: ++gameCounter,
+    generating: false,
+    guaranteed: null,
     config,
     // Única fuente de no-determinismo: el motor solo recibe la semilla
     seed: seed ?? Date.now(),
@@ -67,20 +80,57 @@ export const useGameStore = create<GameState>()((set, get) => {
     newGame: (config, seed) => set(initialState(config, seed)),
 
     reveal: (id) => {
-      const { status, board, seed, config } = get()
-      if (status === 'won' || status === 'lost') return
-      if (status === 'idle') {
-        // Primer clic: se colocan las minas evitando esta celda y sus vecinos
-        if (!board.cells[id] || board.cells[id].flagged) return
-        const mined = placeMines(board, seed, id, config.doubleMines)
-        set({ board: mined, startedAt: Date.now() })
+      const { status, board, seed, config, generating, gameId } = get()
+      if (status === 'won' || status === 'lost' || generating) return
+      if (status !== 'idle') {
+        apply(engine.reveal(board, id))
+        return
       }
-      apply(engine.reveal(get().board, id))
+
+      // Primer clic: se colocan las minas evitando esta celda y sus vecinos
+      if (!board.cells[id] || board.cells[id].flagged) return
+      const start = (mined: Board) => {
+        set({ board: mined, startedAt: Date.now(), generating: false })
+        apply(engine.reveal(mined, id))
+      }
+      if (!config.noGuess) {
+        start(placeMines(board, seed, id, config.doubleMines))
+        return
+      }
+
+      set({ generating: true })
+      return generateNoGuessAsync(config, seed, id)
+        .then(({ board: mined, guaranteed, attempts }) => {
+          if (!guaranteed) {
+            console.warn(
+              `[noGuess] sin tablero garantizado tras ${attempts} intentos`,
+            )
+          }
+          return { mined, guaranteed }
+        })
+        .catch((err) => {
+          console.error('[noGuess] fallo del generador', err)
+          const mined = placeMines(board, seed, id, config.doubleMines)
+          return { mined, guaranteed: false }
+        })
+        .then(({ mined, guaranteed }) => {
+          // Partida reiniciada mientras se generaba: descartar
+          if (get().gameId !== gameId) return
+          set({ guaranteed })
+          // Conservar banderas puestas antes del primer clic
+          const flagged = get().board.cells
+          start({
+            ...mined,
+            cells: mined.cells.map((c) =>
+              flagged[c.id].flagged ? { ...c, flagged: true } : c,
+            ),
+          })
+        })
     },
 
     toggleFlag: (id) => {
-      const { status, board } = get()
-      if (status === 'won' || status === 'lost') return
+      const { status, board, generating } = get()
+      if (status === 'won' || status === 'lost' || generating) return
       const res = engine.toggleFlag(board, id)
       // Banderas antes del primer clic no inician la partida
       apply({ ...res, status })

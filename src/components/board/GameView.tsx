@@ -1,10 +1,14 @@
 import MineCounter from '@/components/hud/MineCounter'
 import ResetButton from '@/components/hud/ResetButton'
 import Timer from '@/components/hud/Timer'
+import { useGameStore } from '@/store/useGameStore'
 import Board from './Board'
 
 /** HUD + tablero de la partida actual del store. */
 export default function GameView() {
+  const generating = useGameStore((s) => s.generating)
+  const guaranteed = useGameStore((s) => s.guaranteed)
+
   return (
     <div className="flex max-w-full flex-col items-center gap-3 rounded-xl bg-slate-800 p-3 shadow-xl">
       <div className="flex w-full items-center justify-between gap-4">
@@ -12,7 +16,24 @@ export default function GameView() {
         <ResetButton />
         <Timer />
       </div>
-      <Board />
+      <div className="relative max-w-full" aria-busy={generating}>
+        <Board />
+        {generating && (
+          <div
+            role="status"
+            className="absolute inset-0 flex animate-delayed-fade-in items-center justify-center gap-2 rounded-lg bg-slate-900/70 text-sm font-semibold text-slate-200"
+          >
+            <span className="size-4 animate-spin rounded-full border-2 border-slate-500 border-t-emerald-400" />
+            Generando…
+          </div>
+        )}
+      </div>
+      {guaranteed === false && (
+        <p role="note" className="text-center text-xs text-amber-400">
+          No se encontró un tablero sin adivinar con esta densidad: puede que
+          necesites suerte.
+        </p>
+      )}
     </div>
   )
 }

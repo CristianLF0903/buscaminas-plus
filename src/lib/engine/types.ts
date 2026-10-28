@@ -40,6 +40,8 @@ export interface BoardConfig {
   solids?: number[]
   doubleMines?: number
   fogRatio?: number
+  /** Generar con `generateNoGuess`: resoluble sin adivinar desde el primer clic. */
+  noGuess?: boolean
 }
 
 export type GameStatus = 'idle' | 'playing' | 'won' | 'lost'

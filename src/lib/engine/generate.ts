@@ -1,15 +1,7 @@
-import { buildNeighbors, coords } from './graph'
-import { createRng } from './rng'
+import { buildNeighbors, coords, isPlayable, playableIds } from './graph'
+import { createRng, hashString } from './rng'
+import { solve } from './solver'
 import type { Board, BoardConfig, Cell } from './types'
-
-/** Celda jugable: dentro de la máscara y no sólida. */
-export function isPlayable(board: Board, id: number): boolean {
-  return board.mask?.[id] !== false && !board.cells[id].solid
-}
-
-export function playableIds(board: Board): number[] {
-  return board.cells.filter((c) => isPlayable(board, c.id)).map((c) => c.id)
-}
 
 /** Tablero sin minas (estado `idle`). Las minas se colocan en el primer clic. */
 export function createEmptyBoard(config: BoardConfig): Board {
@@ -103,4 +95,44 @@ export function placeMines(
     mineWeight: (weights.get(cell.id) ?? 0) as Cell['mineWeight'],
   }))
   return computeAdjacent({ ...board, cells })
+}
+
+export interface NoGuessResult {
+  board: Board
+  /** false si se agotaron los intentos: el tablero puede requerir adivinar. */
+  guaranteed: boolean
+  attempts: number
+}
+
+/**
+ * Genera tableros con semillas derivadas `hash(seed:i)` hasta que el solver
+ * los resuelva sin adivinar desde `firstClick`. Determinista por semilla;
+ * `timeLimitMs` corta antes en configs muy densas (solo afecta al caso sin
+ * garantía, que depende entonces de la velocidad de la máquina).
+ */
+export function generateNoGuess(
+  config: BoardConfig,
+  seed: number | string,
+  firstClick: number,
+  maxAttempts = 500,
+  timeLimitMs = Infinity,
+): NoGuessResult {
+  const empty = createEmptyBoard(config)
+  const deadline = performance.now() + timeLimitMs
+  let board = empty
+  for (let i = 0; i < maxAttempts; i++) {
+    if (i > 0 && performance.now() > deadline) {
+      return { board, guaranteed: false, attempts: i }
+    }
+    board = placeMines(
+      empty,
+      hashString(`${seed}:${i}`),
+      firstClick,
+      config.doubleMines,
+    )
+    if (solve(board, firstClick).solved) {
+      return { board, guaranteed: true, attempts: i + 1 }
+    }
+  }
+  return { board, guaranteed: false, attempts: maxAttempts }
 }

@@ -1,1 +1,15 @@
 @import 'tailwindcss';
+
+@theme {
+  /* Aparece con retraso: generaciones rápidas no muestran parpadeo */
+  --animate-delayed-fade-in: delayed-fade-in 0.2s ease-out 0.15s both;
+
+  @keyframes delayed-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}

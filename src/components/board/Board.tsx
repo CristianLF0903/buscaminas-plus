@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import type { MouseEvent, PointerEvent } from 'react'
 import { useLongPress } from '@/hooks/useLongPress'
-import { isPlayable } from '@/lib/engine/generate'
+import { isPlayable } from '@/lib/engine/graph'
 import { useGameStore } from '@/store/useGameStore'
 import Cell from './Cell'
 

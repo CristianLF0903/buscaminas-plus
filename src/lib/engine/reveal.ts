@@ -1,4 +1,4 @@
-import { isPlayable } from './generate'
+import { isPlayable } from './graph'
 import type { Board, Cell, GameStatus } from './types'
 
 export interface MoveResult {

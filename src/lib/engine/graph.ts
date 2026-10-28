@@ -1,3 +1,14 @@
+import type { Board } from './types'
+
+/** Celda jugable: dentro de la máscara y no sólida. */
+export function isPlayable(board: Board, id: number): boolean {
+  return board.mask?.[id] !== false && !board.cells[id].solid
+}
+
+export function playableIds(board: Board): number[] {
+  return board.cells.filter((c) => isPlayable(board, c.id)).map((c) => c.id)
+}
+
 export function index(x: number, y: number, width: number): number {
   return y * width + x
 }

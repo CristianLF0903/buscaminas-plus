@@ -4,6 +4,7 @@ import GameView from '@/components/board/GameView'
 import ResultModal from '@/components/modals/ResultModal'
 import Button from '@/components/ui/Button'
 import { buttonClass } from '@/components/ui/buttonStyles'
+import Toggle from '@/components/ui/Toggle'
 import {
   CLASSIC_PRESETS,
   CUSTOM_LIMITS,
@@ -18,6 +19,7 @@ const PRESET_KEYS = Object.keys(CLASSIC_PRESETS) as ClassicPreset[]
 
 export default function Classic() {
   const newGame = useGameStore((s) => s.newGame)
+  const noGuess = useGameStore((s) => s.config.noGuess ?? true)
   const [difficulty, setDifficulty] = useState<ClassicDifficulty>(() =>
     difficultyOf(useGameStore.getState().config),
   )
@@ -31,13 +33,13 @@ export default function Classic() {
   useEffect(() => {
     const { config } = useGameStore.getState()
     const { width, height, mines } = config
-    newGame({ width, height, mines })
+    newGame({ width, height, mines, noGuess: config.noGuess ?? true })
   }, [newGame])
 
   const pickPreset = (key: ClassicPreset) => {
     setDifficulty(key)
     setErrors([])
-    newGame(CLASSIC_PRESETS[key].config)
+    newGame({ ...CLASSIC_PRESETS[key].config, noGuess })
   }
 
   const applyCustom = (e: FormEvent) => {
@@ -48,7 +50,11 @@ export default function Classic() {
       return
     }
     setErrors([])
-    newGame(res.config)
+    newGame({ ...res.config, noGuess })
+  }
+
+  const toggleNoGuess = (value: boolean) => {
+    newGame({ ...useGameStore.getState().config, noGuess: value })
   }
 
   const field = (key: keyof typeof custom, label: string, max: number) => (
@@ -103,6 +109,8 @@ export default function Classic() {
           Personalizado
         </button>
       </div>
+
+      <Toggle checked={noGuess} onChange={toggleNoGuess} label="Sin adivinar" />
 
       {difficulty === 'custom' && (
         <form

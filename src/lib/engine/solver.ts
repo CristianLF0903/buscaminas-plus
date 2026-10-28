@@ -1,4 +1,4 @@
-import { isPlayable } from './generate'
+import { isPlayable } from './graph'
 import type { Board } from './types'
 
 /**
