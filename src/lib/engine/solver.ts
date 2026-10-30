@@ -431,9 +431,12 @@ export function solve(board: Board, firstClick: number): SolveResult {
   if (board.cells[firstClick].mineWeight > 0)
     return { solved: false, steps: [] }
 
+  // Se parte de cero salvo las pistas fijas, visibles desde el inicio
   const blank = createKnowledge({
     ...board,
-    cells: board.cells.map((c) => (c.revealed ? { ...c, revealed: false } : c)),
+    cells: board.cells.map((c) =>
+      c.revealed && !c.hint ? { ...c, revealed: false } : c,
+    ),
   })
   let k = open(board, blank, [firstClick])
   const steps: Deduction[] = []

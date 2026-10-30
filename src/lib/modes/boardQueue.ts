@@ -3,7 +3,7 @@ import {
   generateNoGuess,
   placeMines,
 } from '@/lib/engine/generate'
-import { index } from '@/lib/engine/graph'
+import { buildNeighbors, index } from '@/lib/engine/graph'
 import { createRng } from '@/lib/engine/rng'
 import type { Board, BoardConfig } from '@/lib/engine/types'
 import { generateNoGuessAsync } from '@/lib/engine/workerClient'
@@ -11,17 +11,37 @@ import { generateNoGuessAsync } from '@/lib/engine/workerClient'
 /**
  * Primer clic fijo, derivado de la semilla: así el tablero se puede generar
  * antes de que el jugador haga clic. Lejos de los bordes para abrir área.
+ * Con formas o bloques, elige una celda con sus 8 vecinos jugables.
  */
 export function seededFirstClick(
   config: BoardConfig,
   seed: number | string,
 ): number {
-  const { width, height } = config
+  const { width, height, mask, solids, wrap } = config
   const rng = createRng(`${seed}:first`)
   const margin = 2
-  const x = rng.int(margin, width - 1 - margin)
-  const y = rng.int(margin, height - 1 - margin)
-  return index(x, y, width)
+  if (!mask && !solids?.length) {
+    const x = rng.int(margin, width - 1 - margin)
+    const y = rng.int(margin, height - 1 - margin)
+    return index(x, y, width)
+  }
+
+  const neighbors = buildNeighbors({ width, height, mask, wrap, solids })
+  const open = (id: number) => neighbors[id].length === 8
+  const inMargin = (id: number) => {
+    const x = id % width
+    const y = Math.floor(id / width)
+    return (
+      x >= margin && y >= margin && x < width - margin && y < height - margin
+    )
+  }
+  const ids = neighbors.map((_, id) => id)
+  const best = [inMargin, () => true]
+    .map((near) => ids.filter((id) => open(id) && near(id)))
+    .find((list) => list.length) ??
+    // Sin ninguna celda abierta: la de más vecinos jugables
+    [ids.reduce((a, b) => (neighbors[b].length > neighbors[a].length ? b : a))]
+  return best[rng.int(0, best.length - 1)]
 }
 
 /** Tablero minado listo para `useGameStore.loadBoard`. */

@@ -216,7 +216,9 @@ export const useGameStore = create<GameState>()((set, get) => {
           start({
             ...mined,
             cells: mined.cells.map((c) =>
-              flagged[c.id].flagged ? { ...c, flagged: true } : c,
+              flagged[c.id].flagged
+                ? { ...c, flagged: true, doubleFlag: flagged[c.id].doubleFlag }
+                : c,
             ),
           })
         })

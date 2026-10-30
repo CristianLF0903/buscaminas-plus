@@ -18,7 +18,11 @@ export function applyRadar(board: Board, id: number): MoveResult {
     const c = cells[n]
     if (c.revealed) continue
     const flagged = c.mineWeight > 0
-    if (c.flagged !== flagged) cells[n] = { ...c, flagged }
+    // La bandera queda con el peso real: el radar ya lo muestra
+    const doubleFlag = c.mineWeight === 2
+    if (c.flagged !== flagged || !!c.doubleFlag !== doubleFlag) {
+      cells[n] = { ...c, flagged, doubleFlag }
+    }
   }
   let next: Board = { ...board, cells }
   const revealedIds: number[] = []
@@ -41,7 +45,12 @@ export function absorbMine(result: MoveResult): MoveResult {
   const saved: number[] = []
   for (const id of result.revealedIds) {
     if (cells[id].mineWeight > 0) {
-      cells[id] = { ...cells[id], revealed: false, flagged: true }
+      cells[id] = {
+        ...cells[id],
+        revealed: false,
+        flagged: true,
+        doubleFlag: cells[id].mineWeight === 2,
+      }
       saved.push(id)
     }
   }

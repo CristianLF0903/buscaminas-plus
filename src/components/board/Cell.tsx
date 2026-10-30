@@ -37,8 +37,10 @@ const BASE =
 function label(cell: CellData, lost: boolean): string {
   if (cell.solid) return 'Bloque'
   if (!cell.revealed) {
-    if (cell.flagged)
-      return lost && !cell.mineWeight ? 'Bandera incorrecta' : 'Bandera'
+    if (cell.flagged) {
+      if (lost && !cell.mineWeight) return 'Bandera incorrecta'
+      return cell.doubleFlag ? 'Bandera doble' : 'Bandera'
+    }
     return 'Oculta'
   }
   if (cell.mineWeight) return 'Mina'
@@ -59,8 +61,21 @@ function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
     className = `${BASE} bg-slate-950 bg-[repeating-linear-gradient(45deg,transparent_0_4px,rgb(255_255_255/0.05)_4px_8px)]`
   } else if (!cell.revealed) {
     className = `${BASE} cursor-pointer bg-slate-600 shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),inset_0_2px_0_rgb(255_255_255/0.08)] hover:bg-slate-500 active:bg-slate-700`
-    if (cell.flagged) content = lost && !cell.mineWeight ? '❌' : '🚩'
-    else if (detected !== undefined) {
+    if (cell.flagged) {
+      content =
+        lost && !cell.mineWeight ? (
+          '❌'
+        ) : (
+          <span className="relative">
+            🚩
+            {cell.doubleFlag && (
+              <span className="absolute -right-2 -bottom-1 text-[10px] text-amber-300">
+                2
+              </span>
+            )}
+          </span>
+        )
+    } else if (detected !== undefined) {
       content = (
         <span className={detected ? 'text-rose-300' : 'text-emerald-300'}>
           {detected ? '!' : '✓'}
@@ -89,6 +104,8 @@ function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
     className = `${BASE} bg-slate-800 ${NUMBER_COLORS[cell.adjacent] ?? 'text-pink-400'}`
     if (cell.fog) content = <span className="text-slate-500">?</span>
     else if (cell.adjacent) content = cell.adjacent
+    // Pista fija: revelada desde el inicio
+    if (cell.hint) className += ' ring-1 ring-inset ring-sky-400/50'
   }
 
   return (

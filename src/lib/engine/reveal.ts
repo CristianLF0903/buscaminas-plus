@@ -70,7 +70,14 @@ export function reveal(board: Board, id: number): MoveResult {
   return open(board, [id])
 }
 
-/** Pone o quita bandera en una celda oculta. Respeta `flagLimit`. */
+/** Peso que el jugador le da a una bandera: 2 si la marcó ×2. */
+export const flagWeight = (cell: Cell) =>
+  cell.flagged ? (cell.doubleFlag ? 2 : 1) : 0
+
+/**
+ * Cicla la bandera de una celda oculta: vacío → 🚩 → vacío, o con minas
+ * dobles vacío → 🚩 → 🚩×2 → vacío. Respeta `flagLimit` (cuenta celdas).
+ */
 export function toggleFlag(board: Board, id: number): MoveResult {
   const cell = board.cells[id]
   if (!cell || cell.revealed || !isPlayable(board, id) || isOver(board)) {
@@ -81,23 +88,35 @@ export function toggleFlag(board: Board, id: number): MoveResult {
     if (used >= board.flagLimit) return unchanged(board)
   }
   const cells = board.cells.slice()
-  cells[id] = { ...cell, flagged: !cell.flagged }
+  if (!cell.flagged) {
+    cells[id] = { ...cell, flagged: true, doubleFlag: false }
+  } else if (!cell.doubleFlag && board.doubleMines) {
+    cells[id] = { ...cell, doubleFlag: true }
+  } else {
+    cells[id] = { ...cell, flagged: false, doubleFlag: false }
+  }
   const next = { ...board, cells }
   return { board: next, status: statusOf(next), revealedIds: [] }
 }
 
 /**
- * Sobre una celda revelada con número: si las banderas vecinas igualan
- * `adjacent`, revela los vecinos ocultos sin bandera. Cada bandera cuenta 1:
- * sumar el peso real filtraría dónde están las minas dobles.
+ * Sobre una celda revelada con número: si las banderas vecinas suman
+ * `adjacent`, revela los vecinos ocultos sin bandera. Cada bandera pesa lo
+ * que marcó el jugador (🚩 = 1, 🚩×2 = 2), nunca el peso real de la mina.
  */
 export function chord(board: Board, id: number): MoveResult {
   const cell = board.cells[id]
-  if (!cell || !cell.revealed || cell.adjacent === 0 || isOver(board)) {
+  if (
+    !cell ||
+    !cell.revealed ||
+    cell.fog ||
+    cell.adjacent === 0 ||
+    isOver(board)
+  ) {
     return unchanged(board)
   }
   const neighbors = board.neighbors[id]
-  const flags = neighbors.filter((n) => board.cells[n].flagged).length
+  const flags = neighbors.reduce((s, n) => s + flagWeight(board.cells[n]), 0)
   if (flags !== cell.adjacent) return unchanged(board)
   return open(board, neighbors)
 }

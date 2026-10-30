@@ -8,12 +8,16 @@ export interface Cell {
   mineWeight: MineWeight
   revealed: boolean
   flagged: boolean
+  /** Bandera ×2 (tableros con minas dobles): cuenta 2 en el chording. */
+  doubleFlag?: boolean
   /** Bloque sólido: no se juega ni cuenta como vecino. */
   solid: boolean
   /** Niebla: al revelarse muestra `?` en vez del número. */
   fog: boolean
   /** Suma de `mineWeight` de los vecinos. */
   adjacent: number
+  /** Pista fija: revelada desde el inicio. */
+  hint?: boolean
 }
 
 export interface Board {
@@ -27,6 +31,10 @@ export interface Board {
   /** Número de celdas con mina (una mina doble cuenta como 1). */
   mineCount: number
   flagLimit?: number
+  /** Reglas públicas de la config que se aplican al colocar las minas. */
+  doubleMines?: number
+  fogRatio?: number
+  hints?: number
 }
 
 export interface BoardConfig {
@@ -38,8 +46,14 @@ export interface BoardConfig {
   /** Bordes conectados (toroide). */
   wrap?: boolean
   solids?: number[]
+  /** Cuántas de las `mines` pesan 2. */
   doubleMines?: number
+  /** Fracción de celdas con número que se ven como `?`. */
   fogRatio?: number
+  /** Celdas con número reveladas desde el inicio. */
+  hints?: number
+  /** Banderas limitadas a `mines`. */
+  limitFlags?: boolean
   /** Generar con `generateNoGuess`: resoluble sin adivinar desde el primer clic. */
   noGuess?: boolean
 }

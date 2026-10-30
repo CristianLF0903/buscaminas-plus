@@ -13,6 +13,9 @@ export function createEmptyBoard(config: BoardConfig): Board {
     wrap,
     solids = [],
     doubleMines = 0,
+    fogRatio = 0,
+    hints = 0,
+    limitFlags = false,
   } = config
   if (width < 1 || height < 1) {
     throw new Error(`Tamaño inválido: ${width}x${height}`)
@@ -37,6 +40,10 @@ export function createEmptyBoard(config: BoardConfig): Board {
     neighbors: buildNeighbors({ width, height, mask, wrap, solids }),
     mask,
     mineCount: mines,
+    ...(limitFlags ? { flagLimit: mines } : {}),
+    ...(doubleMines ? { doubleMines } : {}),
+    ...(fogRatio ? { fogRatio } : {}),
+    ...(hints ? { hints } : {}),
   }
 
   // -9: la celda del primer clic y sus 8 vecinos quedan libres
@@ -50,6 +57,12 @@ export function createEmptyBoard(config: BoardConfig): Board {
     throw new Error(
       `Minas dobles inválidas: ${doubleMines}. Deben estar entre 0 y ${mines}.`,
     )
+  }
+  if (fogRatio < 0 || fogRatio > 1) {
+    throw new Error(`Niebla inválida: ${fogRatio}. Debe estar entre 0 y 1.`)
+  }
+  if (!Number.isInteger(hints) || hints < 0) {
+    throw new Error(`Pistas fijas inválidas: ${hints}.`)
   }
   return board
 }
@@ -66,15 +79,54 @@ export function computeAdjacent(board: Board): Board {
   return { ...board, cells }
 }
 
+/** Celdas jugables, sin mina y con número: las que pueden llevar niebla o pista. */
+const numbered = (board: Board, exclude: Set<number>) =>
+  board.cells.filter(
+    (c) =>
+      isPlayable(board, c.id) &&
+      c.mineWeight === 0 &&
+      c.adjacent > 0 &&
+      !exclude.has(c.id),
+  )
+
+/**
+ * Niebla y pistas fijas (`board.fogRatio`, `board.hints`). Solo celdas con
+ * número: un cero con niebla se delataría al expandir el flood-fill. Las
+ * pistas evitan la zona del primer clic, que ya se revela sola.
+ */
+function decorate(board: Board, seed: number | string, safe: Set<number>) {
+  const { fogRatio = 0, hints = 0 } = board
+  if (!fogRatio && !hints) return board
+  const cells = board.cells.slice()
+
+  const fogCandidates = numbered(board, new Set())
+  const fogCount = Math.round(fogCandidates.length * fogRatio)
+  const fogged = createRng(`${seed}:fog`)
+    .shuffle(fogCandidates)
+    .slice(0, fogCount)
+  for (const c of fogged) cells[c.id] = { ...c, fog: true }
+
+  // Una pista con niebla no aportaría nada
+  const fogSet = new Set(fogged.map((c) => c.id))
+  const hintCandidates = numbered(board, new Set([...safe, ...fogSet]))
+  for (const c of createRng(`${seed}:hints`)
+    .shuffle(hintCandidates)
+    .slice(0, hints)) {
+    cells[c.id] = { ...cells[c.id], revealed: true, hint: true }
+  }
+  return { ...board, cells }
+}
+
 /**
  * Coloca `board.mineCount` minas evitando `safeCellId` y sus vecinos.
- * Las primeras `doubleMines` del barajado reciben peso 2. No muta `board`.
+ * Las primeras `doubleMines` del barajado reciben peso 2. Aplica niebla y
+ * pistas fijas si el tablero las tiene. No muta `board`.
  */
 export function placeMines(
   board: Board,
   seed: number | string,
   safeCellId: number,
-  doubleMines = 0,
+  doubleMines = board.doubleMines ?? 0,
 ): Board {
   if (!board.cells[safeCellId] || !isPlayable(board, safeCellId)) {
     throw new Error(`Celda de primer clic no jugable: ${safeCellId}`)
@@ -94,7 +146,7 @@ export function placeMines(
     ...cell,
     mineWeight: (weights.get(cell.id) ?? 0) as Cell['mineWeight'],
   }))
-  return computeAdjacent({ ...board, cells })
+  return decorate(computeAdjacent({ ...board, cells }), seed, safe)
 }
 
 export interface NoGuessResult {
