@@ -10,6 +10,7 @@ import { LOGIC_TAG } from '@/lib/copy'
 import { LOW_TIME_MS, START_MS } from '@/lib/modes/timeAttack'
 import { formatTime } from '@/lib/time'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
 
 /** El reloj muestra segundos completos hacia arriba: 60 s se ve 1:00. */
 const showClock = (ms: number) => formatTime(Math.ceil(ms / 1000) * 1000)
@@ -77,7 +78,7 @@ function Run({ onRestart }: { onRestart: () => void }) {
           pisar una mina resta 10 s y pasa al siguiente.
         </p>
         <p className="text-sm">
-          🏆 Mejor <b className="font-mono">{best}</b>{' '}
+          <Icon e="🏆" /> Mejor <b className="font-mono">{best}</b>{' '}
           {best === 1 ? 'tablero' : 'tableros'}
         </p>
         <Button
@@ -95,12 +96,19 @@ function Run({ onRestart }: { onRestart: () => void }) {
   if (session.status === 'over') {
     return (
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-slate-800 p-5">
-        <h2 className="text-center text-xl font-bold">⏱ ¡Tiempo!</h2>
+        <h2 className="text-center text-xl font-bold">
+          <Icon e="⏱" /> ¡Tiempo!
+        </h2>
         <p className="text-center text-slate-300">
           Resolviste{' '}
           <b className="font-mono text-emerald-400">{session.solved}</b>{' '}
           {session.solved === 1 ? 'tablero' : 'tableros'}
-          {session.failed > 0 && <> · 💥 {session.failed}</>}
+          {session.failed > 0 && (
+            <>
+              {' '}
+              · <Icon e="💥" /> {session.failed}
+            </>
+          )}
         </p>
         {reward && <RewardSummary reward={reward} />}
         <div className="grid grid-cols-2 gap-2">
@@ -128,7 +136,7 @@ function Run({ onRestart }: { onRestart: () => void }) {
             aria-label="Tableros resueltos"
             className="min-w-16 rounded-md bg-slate-950 px-2 py-1 text-center font-mono text-lg text-emerald-400 tabular-nums"
           >
-            ✅ {session.solved}
+            <Icon e="✅" /> {session.solved}
           </div>
         }
       />

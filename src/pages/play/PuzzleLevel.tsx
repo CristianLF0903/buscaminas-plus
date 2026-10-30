@@ -17,6 +17,7 @@ import type { LevelBoard } from '@/lib/puzzle/levels'
 import { formatTime } from '@/lib/time'
 import { elapsedMs, useGameStore } from '@/store/useGameStore'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
 
 const RECORD = recordKey('puzzle', 'default')
 
@@ -94,7 +95,7 @@ function Level({ level }: { level: number }) {
     <section className="flex w-full flex-col items-center gap-3">
       <div className="text-center">
         <h1 className="text-2xl font-bold">
-          {meta.boss && <span aria-hidden>👑 </span>}
+          {meta.boss && <Icon e="👑" className="mr-1" />}
           Nivel {level}
           {meta.boss && (
             <span className="ml-2 align-middle text-sm text-amber-300">
@@ -116,7 +117,7 @@ function Level({ level }: { level: number }) {
             <span className="text-slate-400">Clásico</span>
           )}
           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-slate-300">
-            🎯 {formatTime(targetMs)}
+            <Icon e="🎯" /> {formatTime(targetMs)}
           </span>
         </p>
       </div>

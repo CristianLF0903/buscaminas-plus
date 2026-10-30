@@ -5,6 +5,8 @@ import { isAllowedIn, POWER_UPS } from '@/lib/powerups/catalog'
 import { POWER_UP_IDS } from '@/lib/powerups/ids'
 import { canUsePowerUps, useGameStore } from '@/store/useGameStore'
 import { usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 const TARGET_PROMPT: Partial<Record<string, string>> = {
   radar: 'Elige el centro del área a despejar',
@@ -81,7 +83,7 @@ export default function PowerUpBar({ mode }: { mode: GameMode }) {
                   : 'bg-slate-700 hover:bg-slate-600'
               } disabled:cursor-not-allowed disabled:opacity-40`}
             >
-              <span aria-hidden>{def.icon}</span>
+              <Icon e={def.icon} />
               <span className="absolute -right-1 -bottom-1 min-w-5 rounded-full bg-slate-950 px-1 font-mono text-[11px] text-slate-300 tabular-nums">
                 {count}
               </span>
@@ -97,7 +99,7 @@ export default function PowerUpBar({ mode }: { mode: GameMode }) {
         aria-live="polite"
         className="min-h-5 text-center text-sm text-slate-300"
       >
-        {message}
+        {message && <IconText>{message}</IconText>}
       </p>
     </div>
   )

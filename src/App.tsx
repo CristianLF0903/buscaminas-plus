@@ -25,7 +25,7 @@ function App() {
   const [location] = useLocation()
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
+    <div className="flex min-h-screen flex-col bg-slate-900 [background:var(--app-pattern,none),var(--color-slate-900)] text-slate-100">
       <header className="flex h-14 items-center justify-between gap-4 px-4">
         {/* En el menú el título grande ya hace de logo */}
         {location !== '/' && (

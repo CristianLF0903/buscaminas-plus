@@ -3,6 +3,7 @@ import WelcomeGift from '@/components/home/WelcomeGift'
 import { buttonClass } from '@/components/ui/buttonStyles'
 import { HOME_TAGLINE } from '@/lib/copy'
 import { PREFETCH_BY_PATH } from '@/pages/routes'
+import Icon from '@/components/ui/Icon'
 
 interface Mode {
   href: string
@@ -81,7 +82,7 @@ export default function Home() {
               className="group flex h-full items-start gap-4 rounded-xl bg-slate-800 p-4 ring-emerald-400/60 transition hover:bg-slate-700 hover:ring-2 focus-visible:ring-2 focus-visible:outline-none"
             >
               <span className="text-3xl" aria-hidden>
-                {mode.icon}
+                <Icon e={mode.icon} />
               </span>
               <span className="flex flex-col gap-1">
                 <span className="flex items-center gap-2 font-semibold">
@@ -107,21 +108,21 @@ export default function Home() {
           {...prefetchProps('/shop')}
           className={buttonClass('ghost')}
         >
-          🛒 Tienda
+          <Icon e="🛒" /> Tienda
         </Link>
         <Link
           href="/stats"
           {...prefetchProps('/stats')}
           className={buttonClass('ghost')}
         >
-          📊 Estadísticas
+          <Icon e="📊" /> Estadísticas
         </Link>
         <Link
           href="/settings"
           {...prefetchProps('/settings')}
           className={buttonClass('ghost')}
         >
-          ⚙️ Ajustes
+          <Icon e="⚙" /> Ajustes
         </Link>
       </nav>
     </section>

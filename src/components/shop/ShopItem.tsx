@@ -1,6 +1,7 @@
 import Button from '@/components/ui/Button'
 import { modesLabel } from '@/lib/powerups/catalog'
 import type { PowerUpDef } from '@/lib/powerups/catalog'
+import Icon from '@/components/ui/Icon'
 
 interface Props {
   def: PowerUpDef
@@ -17,7 +18,7 @@ export default function ShopItem({ def, owned, coins, onBuy, bought }: Props) {
     <li className="flex flex-col gap-3 rounded-xl bg-slate-800 p-4">
       <div className="flex items-start gap-3">
         <span className="text-3xl" aria-hidden>
-          {def.icon}
+          <Icon e={def.icon} />
         </span>
         <div className="flex flex-1 flex-col gap-1">
           <h2 className="font-semibold">{def.name}</h2>
@@ -34,7 +35,7 @@ export default function ShopItem({ def, owned, coins, onBuy, bought }: Props) {
       </div>
       <div className="flex items-center justify-between gap-3">
         <span className="font-mono font-semibold text-amber-300">
-          {def.price} <span aria-hidden>🪙</span>
+          {def.price} <Icon e="🪙" />
         </span>
         <div className="flex items-center gap-2">
           {missing > 0 && (

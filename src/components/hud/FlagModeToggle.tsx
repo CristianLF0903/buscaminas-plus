@@ -1,4 +1,5 @@
 import { useGameStore } from '@/store/useGameStore'
+import Icon from '@/components/ui/Icon'
 
 /** Modo bandera: tocar pone bandera (alternativa al long-press en móvil). */
 export default function FlagModeToggle() {
@@ -17,7 +18,7 @@ export default function FlagModeToggle() {
           : 'bg-slate-700 opacity-70 hover:opacity-100'
       }`}
     >
-      🚩
+      <Icon e="🚩" />
     </button>
   )
 }

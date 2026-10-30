@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { playSfx, unlockAudio, vibrate } from '@/lib/audio'
+import { endRevealTiming } from '@/lib/endReveal'
 import { flagWeight } from '@/lib/engine/reveal'
 import type { Board } from '@/lib/engine/types'
 import { useGameStore } from '@/store/useGameStore'
@@ -30,6 +31,40 @@ export default function GameFeedback() {
     return () => {
       window.removeEventListener('pointerdown', unlock)
       window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  // Onda de minas al terminar: el modal sale al acabar o con clic/tecla
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let stopSkip = () => {}
+    const finish = () => {
+      clearTimeout(timer)
+      stopSkip()
+      useGameStore.getState().finishReveal()
+    }
+    const unsubscribe = useGameStore.subscribe((s, prev) => {
+      if (s.revealing === prev.revealing) return
+      clearTimeout(timer)
+      stopSkip()
+      if (!s.revealing) return
+      const center = s.status === 'lost' ? s.explodedId : s.origin
+      timer = setTimeout(finish, endRevealTiming(s.board, center).totalMs)
+      // Al siguiente tick: la tecla o el clic que cerró la partida no cuenta
+      const arm = setTimeout(() => {
+        window.addEventListener('click', finish)
+        window.addEventListener('keydown', finish)
+      })
+      stopSkip = () => {
+        clearTimeout(arm)
+        window.removeEventListener('click', finish)
+        window.removeEventListener('keydown', finish)
+      }
+    })
+    return () => {
+      unsubscribe()
+      clearTimeout(timer)
+      stopSkip()
     }
   }, [])
 

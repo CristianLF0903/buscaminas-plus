@@ -1,5 +1,6 @@
 import { useCountUp } from '@/hooks/useCountUp'
 import type { FinishedReward } from '@/hooks/useGameRewards'
+import Icon from '@/components/ui/Icon'
 
 export default function RewardSummary({ reward }: { reward: FinishedReward }) {
   const shown = useCountUp(reward.total)
@@ -21,7 +22,7 @@ export default function RewardSummary({ reward }: { reward: FinishedReward }) {
         className="font-mono text-3xl font-bold text-amber-300 tabular-nums"
         aria-label={`${reward.total} monedas ganadas`}
       >
-        +{shown} <span aria-hidden>🪙</span>
+        +{shown} <Icon e="🪙" />
       </p>
       <dl className="grid w-full grid-cols-[1fr_auto] gap-x-4 text-xs text-slate-400">
         {lines

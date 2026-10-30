@@ -7,6 +7,7 @@ import type { FinishedReward } from '@/hooks/useGameRewards'
 import { formatTime } from '@/lib/time'
 import { elapsedMs, useGameStore } from '@/store/useGameStore'
 import RewardSummary from './RewardSummary'
+import Icon from '@/components/ui/Icon'
 
 export default function ResultModal({
   reward,
@@ -23,12 +24,14 @@ export default function ResultModal({
   const startedAt = useGameStore((s) => s.startedAt)
   const endedAt = useGameStore((s) => s.endedAt)
   const reset = useGameStore((s) => s.reset)
+  // Espera la onda que revela las minas
+  const revealing = useGameStore((s) => s.revealing)
   const [, navigate] = useLocation()
   // Se guarda qué partida se cerró: una nueva partida vuelve a abrir el modal
   const [dismissed, setDismissed] = useState<number | null>(null)
 
   const over = status === 'won' || status === 'lost'
-  const open = over && endedAt !== dismissed
+  const open = over && !revealing && endedAt !== dismissed
   const won = status === 'won'
   const time = formatTime(elapsedMs(startedAt, endedAt, endedAt ?? 0))
 
@@ -39,13 +42,13 @@ export default function ResultModal({
       title={won ? '¡Victoria!' : 'Boom 💥'}
     >
       <div className="text-center text-6xl" aria-hidden>
-        {won ? '😎' : '😵'}
+        <Icon e={won ? '😎' : '😵'} />
       </div>
       <p className="text-center text-slate-300">
         {won ? 'Despejaste el tablero en ' : 'Pisaste una mina a los '}
         <span className="font-mono font-semibold text-emerald-400">{time}</span>
       </p>
-      {reward && <RewardSummary key={endedAt} reward={reward} />}
+      {reward && open && <RewardSummary key={endedAt} reward={reward} />}
       {children}
       <div className="flex flex-col gap-2">
         {allowRetry && (

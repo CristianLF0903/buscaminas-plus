@@ -107,6 +107,102 @@ html[data-theme='retro'] {
   --color-amber-400: #8a6100;
 }
 
+/* ── Temas claros (Menta, Kawaii) ───────────────────────────────────────
+   Igual que Retro: slate invertida y acentos oscurecidos hasta AA sobre
+   fondos claros. Comparten avisos (rose) y monedas (amber). */
+html[data-theme='mint'],
+html[data-theme='kawaii'] {
+  --color-rose-300: #b3261e;
+  --color-rose-400: #b3261e;
+  --color-rose-500: #e53935;
+  --color-rose-600: #d32f2f;
+  --color-amber-100: #5c3d00;
+  --color-amber-300: #8a5a00;
+  --color-amber-400: #8a5a00;
+}
+
+html[data-theme='mint'] {
+  --color-slate-50: #0c241c;
+  --color-slate-100: #143127;
+  --color-slate-200: #1f4236;
+  --color-slate-300: #2c5446;
+  --color-slate-400: #3d6b5b;
+  --color-slate-500: #4f7f6e;
+  --color-slate-600: #a7dcc8;
+  --color-slate-700: #c4eadc;
+  --color-slate-800: #f6fffb;
+  --color-slate-900: #e6f7f1;
+  --color-slate-950: #fbfffd;
+  --color-emerald-300: #0f8a66;
+  --color-emerald-400: #0b7a5a;
+  --color-emerald-500: #08664b;
+}
+
+html[data-theme='kawaii'] {
+  --color-slate-50: #3a0f25;
+  --color-slate-100: #4a1530;
+  --color-slate-200: #5a1d3c;
+  --color-slate-300: #6e2a4b;
+  --color-slate-400: #8a3a60;
+  --color-slate-500: #b0507a;
+  --color-slate-600: #f7a8c8;
+  --color-slate-700: #f9c6da;
+  --color-slate-800: #fff5f9;
+  --color-slate-900: #ffe4ef;
+  --color-slate-950: #fffafc;
+  --color-emerald-300: #d81b60;
+  --color-emerald-400: #c2185b;
+  --color-emerald-500: #ad1457;
+  /* Flores, estrellitas y lunares de fondo (App usa --app-pattern) */
+  --app-pattern:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='%23f9a8c9' fill-opacity='.55'%3E%3Ccircle cx='30' cy='26' r='5'/%3E%3Ccircle cx='38' cy='32' r='5'/%3E%3Ccircle cx='35' cy='41' r='5'/%3E%3Ccircle cx='25' cy='41' r='5'/%3E%3Ccircle cx='22' cy='32' r='5'/%3E%3C/g%3E%3Ccircle cx='30' cy='34' r='3.5' fill='%23ffd166' fill-opacity='.7'/%3E%3Cpath fill='%23f48fb1' fill-opacity='.45' d='m90 78 3 7 7 .6-5.4 4.6 1.7 7L90 93.4 83.7 97.2l1.7-7L80 85.6l7-.6z'/%3E%3C/svg%3E"),
+    radial-gradient(#ffc7dd 2px, transparent 2.5px) 0 0 / 24px 24px;
+}
+
+/* ── Temas oscuros (Bosque, Kawaii noche) ─────────────────────────────── */
+html[data-theme='forest'] {
+  --color-slate-50: #f7fbf8;
+  --color-slate-100: #eef5ef;
+  --color-slate-200: #dce8de;
+  --color-slate-300: #c3d6c7;
+  --color-slate-400: #9cb8a3;
+  --color-slate-500: #4f7a5c;
+  --color-slate-600: #2f5a3c;
+  --color-slate-700: #1d3d28;
+  --color-slate-800: #132a1b;
+  --color-slate-900: #0b1a10;
+  --color-slate-950: #050d08;
+  --color-emerald-300: #f5d77a;
+  --color-emerald-400: #e9c046;
+  --color-emerald-500: #d4a72c;
+}
+
+html[data-theme='kawaiiNight'] {
+  --color-slate-50: #fff5fa;
+  --color-slate-100: #ffe9f4;
+  --color-slate-200: #fad6ea;
+  --color-slate-300: #f0c2dc;
+  --color-slate-400: #d79ac0;
+  --color-slate-500: #8c3d73;
+  --color-slate-600: #6b2257;
+  --color-slate-700: #47143a;
+  --color-slate-800: #2e0c22;
+  --color-slate-900: #1f0716;
+  --color-slate-950: #12030c;
+  --color-emerald-300: #ffb3d4;
+  --color-emerald-400: #ff7eb6;
+  --color-emerald-500: #f0609e;
+  --app-pattern:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath fill='%23ff7eb6' fill-opacity='.22' d='m30 18 3 7 7 .6-5.4 4.6 1.7 7L30 33.4 23.7 37.2l1.7-7L20 25.6l7-.6z'/%3E%3Cpath fill='%23ffd6ea' fill-opacity='.18' d='m88 76 2 4.6 4.6.4-3.5 3 1.1 4.6L88 86.1l-4.2 2.5 1.1-4.6-3.5-3 4.6-.4z'/%3E%3C/svg%3E"),
+    radial-gradient(rgb(255 126 182 / 0.12) 2px, transparent 2.5px) 0 0 / 28px
+      28px;
+}
+
+/* Celdas más redondas en los kawaii */
+html[data-theme^='kawaii'] [role='gridcell'] {
+  border-radius: 30%;
+}
+
 /* ── Daltonismo ─────────────────────────────────────────────────────────
    Paleta Okabe-Ito (ajustada a contraste AA ≥ 4.5:1) para los números y marcas con forma (no solo color)
    en la Pista. */
@@ -162,23 +258,78 @@ html[data-theme='retro'] [data-n='7'] {
 html[data-theme='retro'] [data-n='8'] {
   color: #444444;
 }
-/* Daltonismo sobre el fondo claro de Retro: misma paleta, más oscura */
-html[data-theme='retro'][data-colorblind] [data-n='1'] {
+
+/* Números de los claros: tonos oscuros con contraste AA sobre blanco */
+html[data-theme='mint'] [data-n='1'],
+html[data-theme='kawaii'] [data-n='1'] {
+  color: #1565c0;
+}
+html[data-theme='mint'] [data-n='2'],
+html[data-theme='kawaii'] [data-n='2'] {
+  color: #2e7d32;
+}
+html[data-theme='mint'] [data-n='3'],
+html[data-theme='kawaii'] [data-n='3'] {
+  color: #c62828;
+}
+html[data-theme='mint'] [data-n='4'],
+html[data-theme='kawaii'] [data-n='4'] {
+  color: #6a1b9a;
+}
+html[data-theme='mint'] [data-n='5'],
+html[data-theme='kawaii'] [data-n='5'] {
+  color: #8d4a00;
+}
+html[data-theme='mint'] [data-n='6'],
+html[data-theme='kawaii'] [data-n='6'] {
+  color: #00695c;
+}
+html[data-theme='mint'] [data-n='7'],
+html[data-theme='kawaii'] [data-n='7'] {
+  color: #222222;
+}
+html[data-theme='mint'] [data-n='8'],
+html[data-theme='kawaii'] [data-n='8'] {
+  color: #555555;
+}
+
+/* En los oscuros con acento no verde, el 2 sigue siendo verde */
+html[data-theme='forest']:not([data-colorblind]) [data-n='2'] {
+  color: #6fd08c;
+}
+html[data-theme='kawaiiNight']:not([data-colorblind]) [data-n='2'] {
+  color: #6ee7a0;
+}
+
+/* Daltonismo sobre fondos claros (Retro, Menta, Kawaii): misma paleta, más oscura */
+html[data-theme='retro'][data-colorblind] [data-n='1'],
+html[data-theme='mint'][data-colorblind] [data-n='1'],
+html[data-theme='kawaii'][data-colorblind] [data-n='1'] {
   color: #00508a;
 }
-html[data-theme='retro'][data-colorblind] [data-n='2'] {
+html[data-theme='retro'][data-colorblind] [data-n='2'],
+html[data-theme='mint'][data-colorblind] [data-n='2'],
+html[data-theme='kawaii'][data-colorblind] [data-n='2'] {
   color: #005c44;
 }
-html[data-theme='retro'][data-colorblind] [data-n='3'] {
+html[data-theme='retro'][data-colorblind] [data-n='3'],
+html[data-theme='mint'][data-colorblind] [data-n='3'],
+html[data-theme='kawaii'][data-colorblind] [data-n='3'] {
   color: #7a4500;
 }
-html[data-theme='retro'][data-colorblind] [data-n='4'] {
+html[data-theme='retro'][data-colorblind] [data-n='4'],
+html[data-theme='mint'][data-colorblind] [data-n='4'],
+html[data-theme='kawaii'][data-colorblind] [data-n='4'] {
   color: #8a2a62;
 }
-html[data-theme='retro'][data-colorblind] [data-n='5'] {
+html[data-theme='retro'][data-colorblind] [data-n='5'],
+html[data-theme='mint'][data-colorblind] [data-n='5'],
+html[data-theme='kawaii'][data-colorblind] [data-n='5'] {
   color: #8f3600;
 }
-html[data-theme='retro'][data-colorblind] [data-n='6'] {
+html[data-theme='retro'][data-colorblind] [data-n='6'],
+html[data-theme='mint'][data-colorblind] [data-n='6'],
+html[data-theme='kawaii'][data-colorblind] [data-n='6'] {
   color: #4d4600;
 }
 
@@ -205,17 +356,26 @@ html[data-theme='retro'][data-colorblind] [data-n='6'] {
 
 .cell-explode {
   animation: cell-explode 0.35s ease-out both;
-  animation-delay: min(
-    calc(
-      max(
-          var(--x) - var(--ex, 0),
-          var(--ex, 0) - var(--x),
-          var(--y) - var(--ey, 0),
-          var(--ey, 0) - var(--y)
-        ) *
-        45ms
-    ),
-    900ms
+}
+
+/* Victoria: las minas aparecen sin el destello de la explosión */
+.cell-mine-show {
+  animation: cell-mine-show 0.35s ease-out both;
+}
+
+/* Fin de partida: onda desde la mina pisada o la última jugada (--ex/--ey).
+   El tablero fija --mine-step para que dure lo mismo en cualquier tamaño
+   (ver lib/endReveal.ts). */
+.cell-explode,
+.cell-mine-show {
+  animation-delay: calc(
+    max(
+        var(--x) - var(--ex, 0),
+        var(--ex, 0) - var(--x),
+        var(--y) - var(--ey, 0),
+        var(--ey, 0) - var(--y)
+      ) *
+      var(--mine-step, 45ms)
   );
 }
 
@@ -234,7 +394,19 @@ html[data-theme='retro'][data-colorblind] [data-n='6'] {
   60% {
     opacity: 1;
     transform: scale(1.35);
-    background-color: var(--color-amber-400);
+    /* Fijo: en los temas claros amber está oscurecido para texto */
+    background-color: #fbbf24;
+  }
+}
+
+@keyframes cell-mine-show {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.2);
   }
 }
 

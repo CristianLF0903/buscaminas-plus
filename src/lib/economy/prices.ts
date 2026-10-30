@@ -13,4 +13,8 @@ export const POWER_UP_PRICES: Record<PowerUpId, number> = {
 export const THEME_PRICES = {
   retro: 150,
   neon: 250,
+  mint: 150,
+  forest: 200,
+  kawaii: 250,
+  kawaiiNight: 250,
 } as const

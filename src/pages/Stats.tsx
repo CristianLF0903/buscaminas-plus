@@ -15,6 +15,8 @@ import {
 import { formatTime } from '@/lib/time'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
 import type { KeyStats } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 const CLASSIC_KEYS = [
   ...ENDLESS_DIFFICULTIES.map((d) => [d, CLASSIC_PRESETS[d].label] as const),
@@ -29,7 +31,9 @@ const time = (ms: number | undefined) => (ms ? formatTime(ms) : '—')
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3 rounded-xl bg-slate-800 p-4">
-      <h2 className="font-semibold">{title}</h2>
+      <h2 className="font-semibold">
+        <IconText>{title}</IconText>
+      </h2>
       {children}
     </section>
   )
@@ -41,7 +45,9 @@ function Figures({ items }: { items: [label: string, value: ReactNode][] }) {
     <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
       {items.map(([label, value]) => (
         <div key={label} className="flex flex-col">
-          <dt className="text-xs text-slate-400">{label}</dt>
+          <dt className="text-xs text-slate-400">
+            <IconText>{label}</IconText>
+          </dt>
           <dd className="font-mono text-lg tabular-nums">{value}</dd>
         </div>
       ))}
@@ -151,10 +157,14 @@ function ProgressTools() {
   return (
     <Card title="Progreso">
       <div className="flex flex-wrap gap-2">
-        <Button onClick={exportProgress}>⬇️ Exportar</Button>
-        <Button onClick={() => fileInput.current?.click()}>⬆️ Importar</Button>
+        <Button onClick={exportProgress}>
+          <Icon e="⬇" /> Exportar
+        </Button>
+        <Button onClick={() => fileInput.current?.click()}>
+          <Icon e="⬆" /> Importar
+        </Button>
         <Button onClick={() => setConfirm('reset')}>
-          🗑️ Reiniciar estadísticas
+          <Icon e="🗑" /> Reiniciar estadísticas
         </Button>
         <input
           ref={fileInput}

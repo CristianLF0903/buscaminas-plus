@@ -7,6 +7,8 @@ import { THEME_IDS, THEMES } from '@/lib/themes'
 import type { ThemeId } from '@/lib/themes'
 import { ownsTheme, usePlayerStore } from '@/store/usePlayerStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 const PAID_THEMES = THEME_IDS.filter((id) => THEMES[id].price > 0)
 
@@ -54,7 +56,7 @@ export default function Shop() {
           </p>
         </div>
         <p className="font-mono text-lg font-semibold text-amber-300">
-          {coins} <span aria-hidden>🪙</span>
+          {coins} <Icon e="🪙" />
         </p>
       </div>
 
@@ -100,7 +102,7 @@ export default function Shop() {
             key={toast.id}
             className="animate-toast-in rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg"
           >
-            {toast.text}
+            <IconText>{toast.text}</IconText>
           </span>
         )}
       </div>

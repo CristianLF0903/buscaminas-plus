@@ -6,6 +6,8 @@ import { STARTER_GIFT } from '@/lib/economy/starterGift'
 import { POWER_UPS } from '@/lib/powerups/catalog'
 import type { PowerUpId } from '@/lib/powerups/ids'
 import { usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 // Espacio no separable: cada ítem del regalo queda en una sola línea
 const NBSP = '\u00a0'
@@ -35,22 +37,23 @@ export default function WelcomeGift() {
       className="flex flex-col items-center gap-3 rounded-xl bg-amber-400/10 p-4 text-center ring-1 ring-amber-400/40 sm:flex-row sm:text-left"
     >
       <span className="text-4xl" aria-hidden>
-        🎁
+        <Icon e="🎁" />
       </span>
       {justClaimed ? (
         <>
           <p className="flex-1 text-amber-100" aria-live="polite">
-            ¡Listo! Ya tienes {giftText()}. Úsalos desde la barra bajo el
-            tablero.
+            ¡Listo! Ya tienes <IconText>{giftText()}</IconText>. Úsalos desde la
+            barra bajo el tablero.
           </p>
           <Link href="/shop" className={buttonClass('secondary')}>
-            🛒 Ver tienda
+            <Icon e="🛒" /> Ver tienda
           </Link>
         </>
       ) : (
         <>
           <p className="flex-1 text-amber-100">
-            <b>¡Bienvenido!</b> Te regalamos {giftText()} para empezar.
+            <b>¡Bienvenido!</b> Te regalamos <IconText>{giftText()}</IconText>{' '}
+            para empezar.
           </p>
           <Button
             variant="primary"

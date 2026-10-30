@@ -15,6 +15,7 @@ import {
 import type { Hint } from '@/lib/powerups'
 import type { PowerUpId } from '@/lib/powerups/ids'
 import { usePlayerStore } from './usePlayerStore'
+import { useSettingsStore } from './useSettingsStore'
 
 export interface GameState {
   config: BoardConfig
@@ -52,8 +53,14 @@ export interface GameState {
   origin: number | null
   /** Tocar pone bandera en vez de revelar (alternativa al long-press). */
   flagMode: boolean
+  /**
+   * Partida terminada, onda de minas en curso: los modales esperan a
+   * `finishReveal` (lo llama GameFeedback al acabar o al saltarla).
+   */
+  revealing: boolean
 
   setFlagMode: (on: boolean) => void
+  finishReveal: () => void
 
   newGame: (config: BoardConfig, seed?: number | string) => void
   /**
@@ -117,8 +124,16 @@ function initialState(config: BoardConfig, seed?: number | string) {
     notice: null,
     timeBonusMs: 0,
     origin: null as number | null,
+    revealing: false,
   }
 }
+
+/** Animación de fin de partida: Ajustes y movimiento reducido del sistema. */
+const endAnimations = () =>
+  useSettingsStore.getState().animations &&
+  !(
+    globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+  )
 
 /** Power-ups que se pueden usar ahora mismo (estado de la partida y límite). */
 export const canUsePowerUps = (s: GameState) =>
@@ -150,6 +165,7 @@ export const useGameStore = create<GameState>()((set, get) => {
       // Cualquier jugada invalida la pista anterior
       hint: null,
       notice,
+      revealing: over && endAnimations(),
       ...(over ? { activePowerUp: null } : {}),
     })
   }
@@ -167,6 +183,8 @@ export const useGameStore = create<GameState>()((set, get) => {
     flagMode: false,
 
     setFlagMode: (on) => set({ flagMode: on }),
+
+    finishReveal: () => set({ revealing: false }),
 
     newGame: (config, seed) => set(initialState(config, seed)),
 

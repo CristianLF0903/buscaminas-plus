@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import IconText from '@/components/ui/IconText'
 
 interface Props {
   checked: boolean
@@ -40,7 +41,9 @@ export default function Toggle({
             className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-4' : ''}`}
           />
         </span>
-        {label}
+        <span>
+          <IconText>{label}</IconText>
+        </span>
       </button>
       {description && (
         <p id={descriptionId} className="text-xs text-slate-400">

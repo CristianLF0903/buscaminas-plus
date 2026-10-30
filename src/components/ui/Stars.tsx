@@ -1,4 +1,5 @@
 import { STAR_LABELS } from '@/lib/modes/puzzle'
+import Icon from './Icon'
 
 /** Las tres estrellas de un nivel; las que faltan, apagadas. */
 export default function Stars({
@@ -23,9 +24,9 @@ export default function Stars({
           key={bit}
           title={label}
           aria-hidden
-          className={`${mask & bit ? 'text-amber-300' : 'text-slate-600'} ${highlight & bit ? 'animate-bump' : ''}`}
+          className={`${mask & bit ? '' : 'opacity-30 grayscale'} ${highlight & bit ? 'animate-bump' : ''}`}
         >
-          ★
+          <Icon e="⭐" />
         </span>
       ))}
     </span>

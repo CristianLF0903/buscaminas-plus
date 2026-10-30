@@ -23,6 +23,8 @@ import { progressGrid, shareText } from '@/lib/share/daily'
 import { formatCountdown, formatTime } from '@/lib/time'
 import { useGameStore } from '@/store/useGameStore'
 import { usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 function Countdown({ onNewDay }: { onNewDay: () => void }) {
   const now = useNow()
@@ -62,15 +64,18 @@ function Summary({
   return (
     <div className="flex w-full max-w-sm flex-col gap-4 rounded-xl bg-slate-800 p-5">
       <p className="text-center text-lg font-semibold">
-        {won
-          ? `✅ Resuelto en ${formatTime(entry.timeMs ?? 0)}`
-          : entry.grid
-            ? '❌ Hoy no salió'
-            : '❌ Intento abandonado'}
+        <IconText>
+          {won
+            ? `✅ Resuelto en ${formatTime(entry.timeMs ?? 0)}`
+            : entry.grid
+              ? '❌ Hoy no salió'
+              : '❌ Intento abandonado'}
+        </IconText>
       </p>
       {won && (entry.streak ?? 0) > 0 && (
         <p className="text-center text-amber-300">
-          🔥 Racha de {entry.streak} {entry.streak === 1 ? 'día' : 'días'}
+          <Icon e="🔥" /> Racha de {entry.streak}{' '}
+          {entry.streak === 1 ? 'día' : 'días'}
         </p>
       )}
       <ShareCard text={text} />
@@ -156,10 +161,10 @@ export default function Daily() {
           </p>
           <div className="flex gap-6 text-sm">
             <span>
-              🔥 Racha <b className="font-mono">{streakSoFar}</b>
+              <Icon e="🔥" /> Racha <b className="font-mono">{streakSoFar}</b>
             </span>
             <span>
-              🏆 Mejor <b className="font-mono">{bestStreak}</b>
+              <Icon e="🏆" /> Mejor <b className="font-mono">{bestStreak}</b>
             </span>
           </div>
           <Button variant="primary" onClick={start} autoFocus>

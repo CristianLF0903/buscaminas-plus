@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import type { CSSProperties } from 'react'
+import Icon from '@/components/ui/Icon'
 import type { Cell as CellData } from '@/lib/engine/types'
 
 interface Props {
@@ -8,6 +9,10 @@ interface Props {
   exploded: boolean
   /** Partida perdida: se marcan las banderas incorrectas. */
   lost: boolean
+  /** Partida ganada: las minas sin bandera se muestran con la onda final. */
+  won?: boolean
+  /** Emoji de la bandera según el tema (🚩, o 🎀 en los kawaii). */
+  flagIcon?: string
   /** Resultado del Detector sobre esta celda oculta. */
   detected?: boolean
   /** Resaltado de la Pista. */
@@ -35,15 +40,32 @@ const NUMBER_COLORS: Record<number, string> = {
 
 // Lado de la celda: `--cell`, lo define Board según el viewport
 const BASE =
-  'flex size-(--cell) items-center justify-center rounded-sm text-sm font-bold leading-none select-none'
+  'relative flex size-(--cell) items-center justify-center rounded-sm text-sm font-bold leading-none select-none'
 
-function state(cell: CellData, lost: boolean, detected?: boolean): string {
+/** Icono que escala con la celda (no con el texto). */
+const CELL_ICON = 'size-[68%]'
+
+/** "2" sobre banderas y minas dobles. */
+const double = (
+  <span className="absolute right-px bottom-px text-[10px] leading-none text-amber-300">
+    2
+  </span>
+)
+
+function state(
+  cell: CellData,
+  lost: boolean,
+  won: boolean,
+  detected?: boolean,
+): string {
   if (cell.solid) return 'bloque'
   if (!cell.revealed) {
     if (cell.flagged) {
       if (lost && !cell.mineWeight) return 'bandera incorrecta'
       return cell.doubleFlag ? 'bandera doble' : 'bandera'
     }
+    if (won && cell.mineWeight)
+      return cell.mineWeight === 2 ? 'mina doble' : 'mina'
     if (detected !== undefined) {
       return detected ? 'oculta, el detector dice mina' : 'oculta, segura'
     }
@@ -56,14 +78,21 @@ function state(cell: CellData, lost: boolean, detected?: boolean): string {
 }
 
 /** "Fila 3, columna 5: 2 minas cerca". */
-const label = (cell: CellData, lost: boolean, detected?: boolean) =>
-  `Fila ${cell.y + 1}, columna ${cell.x + 1}: ${state(cell, lost, detected)}`
+const label = (
+  cell: CellData,
+  lost: boolean,
+  won: boolean,
+  detected?: boolean,
+) =>
+  `Fila ${cell.y + 1}, columna ${cell.x + 1}: ${state(cell, lost, won, detected)}`
 
 function Cell({
   cell,
   playable,
   exploded,
   lost,
+  won = false,
+  flagIcon = '🚩',
   detected,
   hinted,
   focused = false,
@@ -83,17 +112,22 @@ function Cell({
     if (cell.flagged) {
       content =
         lost && !cell.mineWeight ? (
-          '❌'
+          <Icon e="❌" className={CELL_ICON} />
         ) : (
-          <span className="relative">
-            🚩
-            {cell.doubleFlag && (
-              <span className="absolute -right-2 -bottom-1 text-[10px] text-amber-300">
-                2
-              </span>
-            )}
-          </span>
+          <>
+            <Icon e={flagIcon} className={CELL_ICON} />
+            {cell.doubleFlag && double}
+          </>
         )
+    } else if (won && cell.mineWeight) {
+      // Victoria: la onda final muestra dónde estaban
+      className += ' cell-mine-show'
+      content = (
+        <>
+          <Icon e="💣" className={CELL_ICON} />
+          {cell.mineWeight === 2 && double}
+        </>
+      )
     } else if (detected !== undefined) {
       content = (
         <span className={detected ? 'text-rose-300' : 'text-emerald-300'}>
@@ -110,15 +144,12 @@ function Cell({
   } else if (cell.mineWeight) {
     // Explosión en cadena desde la mina pisada
     className = `${BASE} cell-explode ${exploded ? 'bg-rose-600' : 'bg-slate-800'}`
+    // La pisada estalla; el resto queda como bomba
     content = (
-      <span className="relative">
-        💣
-        {cell.mineWeight === 2 && (
-          <span className="absolute -right-2 -bottom-1 text-[10px] text-amber-300">
-            2
-          </span>
-        )}
-      </span>
+      <>
+        <Icon e={exploded ? '💥' : '💣'} className={CELL_ICON} />
+        {cell.mineWeight === 2 && double}
+      </>
     )
   } else {
     className = `${BASE} cell-reveal bg-slate-800 ${NUMBER_COLORS[cell.adjacent] ?? 'text-pink-400'}`
@@ -138,7 +169,7 @@ function Cell({
       data-id={cell.id}
       data-n={cell.revealed && !cell.fog ? cell.adjacent : undefined}
       data-hint={hinted}
-      aria-label={label(cell, lost, detected)}
+      aria-label={label(cell, lost, won, detected)}
       tabIndex={focused ? 0 : -1}
       className={`${className} focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-300`}
       style={style}

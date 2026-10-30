@@ -7,9 +7,12 @@ import type {
 } from 'react'
 import { CELL_PX, useBoardOrientation } from '@/hooks/useBoardOrientation'
 import { useLongPress } from '@/hooks/useLongPress'
+import { useActiveTheme } from '@/hooks/useActiveTheme'
 import { usePinchZoom } from '@/hooks/usePinchZoom'
+import { endRevealTiming } from '@/lib/endReveal'
 import { coords, index, isPlayable } from '@/lib/engine/graph'
 import type { Board as BoardData } from '@/lib/engine/types'
+import { THEMES } from '@/lib/themes'
 import { useGameStore } from '@/store/useGameStore'
 import Cell from './Cell'
 
@@ -72,6 +75,7 @@ export default function Board({ allowReset = true }: { allowReset?: boolean }) {
   const toggleFlag = useGameStore((s) => s.toggleFlag)
   const chord = useGameStore((s) => s.chord)
   const reset = useGameStore((s) => s.reset)
+  const flagIcon = THEMES[useActiveTheme()].flagIcon
   const pointerType = useRef('mouse')
   const gridRef = useRef<HTMLDivElement>(null)
   const [focusId, setFocusId] = useState<number | null>(null)
@@ -195,10 +199,14 @@ export default function Board({ allowReset = true }: { allowReset?: boolean }) {
   }
 
   const lost = status === 'lost'
+  const won = status === 'won'
   const at = (id: number | null) =>
     id === null ? { x: 0, y: 0 } : coords(id, board.width)
   const o = at(origin)
-  const ex = at(explodedId)
+  // Centro de la onda final: la mina pisada o, al ganar, la última jugada
+  const center = lost ? explodedId : origin
+  const ex = at(center)
+  const mineStep = lost || won ? endRevealTiming(board, center).stepMs : 0
 
   return (
     <div className="flex max-w-full flex-col items-center gap-1">
@@ -246,6 +254,7 @@ export default function Board({ allowReset = true }: { allowReset?: boolean }) {
               '--oy': o.y,
               '--ex': ex.x,
               '--ey': ex.y,
+              '--mine-step': `${mineStep}ms`,
               gridTemplateColumns: `repeat(${columns}, var(--cell))`,
             } as CSSProperties
           }
@@ -277,6 +286,8 @@ export default function Board({ allowReset = true }: { allowReset?: boolean }) {
                   playable={isPlayable(board, cell.id)}
                   exploded={cell.id === explodedId}
                   lost={lost}
+                  won={won}
+                  flagIcon={flagIcon}
                   detected={detected[cell.id]}
                   hinted={hint?.id === cell.id ? hint.kind : undefined}
                   focused={cell.id === focused}

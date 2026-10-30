@@ -11,6 +11,7 @@ import {
 } from '@/lib/modes/puzzle'
 import { introducedAt, isBoss } from '@/lib/puzzle/levels'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
 
 const NO_STARS: Record<number, number> = {}
 
@@ -36,7 +37,7 @@ function LevelTile({
         aria-label={`Nivel ${level}, bloqueado`}
         className={`${base} bg-slate-800/50 text-slate-600`}
       >
-        <span aria-hidden>{boss ? '👑' : '🔒'}</span>
+        <Icon e={boss ? '👑' : '🔒'} />
         <span className="text-[10px]">{level}</span>
       </div>
     )
@@ -55,7 +56,7 @@ function LevelTile({
     >
       {(boss || intro) && (
         <span aria-hidden className="absolute -top-1.5 -right-1 text-xs">
-          {boss ? '👑' : TUTORIALS[intro!].icon}
+          <Icon e={boss ? '👑' : TUTORIALS[intro!].icon} />
         </span>
       )}
       {level}
@@ -92,7 +93,7 @@ export default function PuzzleSelect() {
 
       <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
         <span>
-          🧩 Completados <b className="font-mono">{maxLevel}</b>
+          <Icon e="🧩" /> Completados <b className="font-mono">{maxLevel}</b>
         </span>
         <span>
           <span className="text-amber-300">★</span> Estrellas{' '}
@@ -144,7 +145,8 @@ export default function PuzzleSelect() {
       </ol>
 
       <p className="text-center text-xs text-slate-400">
-        ★ completar · ★ bajo el tiempo objetivo · ★ sin power-ups · 👑 jefe
+        <Icon e="⭐" /> completar · <Icon e="⭐" /> bajo el tiempo objetivo ·{' '}
+        <Icon e="⭐" /> sin power-ups · <Icon e="👑" /> jefe
       </p>
     </section>
   )

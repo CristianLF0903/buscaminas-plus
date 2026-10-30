@@ -13,7 +13,9 @@ import { endlessMultiplier } from '@/lib/economy/rewards'
 import { CLASSIC_PRESETS } from '@/lib/modes/classic'
 import { ENDLESS_DIFFICULTIES } from '@/lib/modes/endless'
 import type { EndlessDifficulty } from '@/lib/modes/endless'
+import { useGameStore } from '@/store/useGameStore'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
+import Icon from '@/components/ui/Icon'
 
 const boards = (n: number) => (n === 1 ? 'tablero' : 'tableros')
 
@@ -40,6 +42,8 @@ function Run({
     (s) => s.records[recordKey('endless', difficulty)],
   )
   const [dismissed, setDismissed] = useState(false)
+  // El modal espera la onda que revela las minas
+  const revealing = useGameStore((s) => s.revealing)
   const [, navigate] = useLocation()
   const best = record?.maxBoards ?? 0
   const clean = record?.maxBoardsNoPowerUps ?? 0
@@ -84,7 +88,8 @@ function Run({
           el anterior.
         </p>
         <p className="text-sm">
-          🏆 Mejor <b className="font-mono">{best}</b> {boards(best)}
+          <Icon e="🏆" /> Mejor <b className="font-mono">{best}</b>{' '}
+          {boards(best)}
           {clean > 0 && (
             <span className="text-slate-400">
               {' '}
@@ -111,7 +116,7 @@ function Run({
         className="flex w-full max-w-sm flex-col items-center gap-2 rounded-xl bg-slate-800 p-8 text-center"
       >
         <span className="text-sm text-emerald-300">
-          ✅ {run.solved} {boards(run.solved)}
+          <Icon e="✅" /> {run.solved} {boards(run.solved)}
         </span>
         <span
           key={run.board}
@@ -120,7 +125,7 @@ function Run({
           Tablero {run.board + 1}
         </span>
         <span className="text-sm text-amber-300">
-          🪙 ×{endlessMultiplier(run.board + 1)}
+          <Icon e="🪙" /> ×{endlessMultiplier(run.board + 1)}
         </span>
         <span className="min-h-5 text-sm text-slate-400">
           {waiting ? 'Generando…' : ''}
@@ -137,10 +142,10 @@ function Run({
           Tablero <b className="font-mono">{run.board}</b>
         </span>
         <span>
-          ✅ <b className="font-mono">{run.solved}</b>
+          <Icon e="✅" /> <b className="font-mono">{run.solved}</b>
         </span>
         <span className="text-amber-300">
-          🪙 ×{endlessMultiplier(run.board)}
+          <Icon e="🪙" /> ×{endlessMultiplier(run.board)}
         </span>
       </p>
       <GameView mode="endless" allowReset={false} />
@@ -153,7 +158,7 @@ function Run({
         </div>
       )}
       <Modal
-        open={over && !dismissed}
+        open={over && !revealing && !dismissed}
         onClose={() => setDismissed(true)}
         title="Fin de la racha 💥"
       >
@@ -162,9 +167,10 @@ function Run({
           {boards(run.solved)} en {CLASSIC_PRESETS[difficulty].label}
         </p>
         <p className="text-center text-sm text-slate-400">
-          🏆 Récord: <b className="font-mono">{best}</b> {boards(best)}
+          <Icon e="🏆" /> Récord: <b className="font-mono">{best}</b>{' '}
+          {boards(best)}
         </p>
-        {reward && <RewardSummary reward={reward} />}
+        {reward && !revealing && <RewardSummary reward={reward} />}
         <div className="flex flex-col gap-2">
           <Button variant="primary" onClick={onRestart} autoFocus>
             Otra vez

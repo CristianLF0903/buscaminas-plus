@@ -1,4 +1,5 @@
 import { selectMinesLeft, useGameStore } from '@/store/useGameStore'
+import Icon from '@/components/ui/Icon'
 
 /** Minas restantes; con límite de banderas, las banderas que quedan. */
 export default function MineCounter() {
@@ -13,7 +14,7 @@ export default function MineCounter() {
         aria-label="Banderas restantes"
         className={`min-w-16 rounded-md bg-slate-950 px-2 py-1 text-center font-mono text-lg tabular-nums ${flagsLeft === 0 ? 'text-amber-400' : 'text-rose-400'}`}
       >
-        🚩 {flagsLeft}
+        <Icon e="🚩" /> {flagsLeft}
       </div>
     )
   }
@@ -23,7 +24,7 @@ export default function MineCounter() {
       aria-label="Minas restantes"
       className={`min-w-16 rounded-md bg-slate-950 px-2 py-1 text-center font-mono text-lg tabular-nums ${left < 0 ? 'text-amber-400' : 'text-rose-400'}`}
     >
-      💣 {left}
+      <Icon e="💣" /> {left}
     </div>
   )
 }

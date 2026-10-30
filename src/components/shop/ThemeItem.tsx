@@ -1,5 +1,6 @@
 import Button from '@/components/ui/Button'
 import type { ThemeDef } from '@/lib/themes'
+import Icon from '@/components/ui/Icon'
 
 interface Props {
   theme: ThemeDef
@@ -42,7 +43,7 @@ export default function ThemeItem({
           <span className="text-sm text-emerald-400">✓ Tuyo</span>
         ) : (
           <span className="font-mono font-semibold text-amber-300">
-            {theme.price} <span aria-hidden>🪙</span>
+            {theme.price} <Icon e="🪙" />
           </span>
         )}
         <div className="flex items-center gap-2">

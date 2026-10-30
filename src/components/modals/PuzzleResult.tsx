@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation } from 'wouter'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
+import Icon from '@/components/ui/Icon'
 import Stars from '@/components/ui/Stars'
 import type { FinishedReward } from '@/hooks/useGameRewards'
 import { newStarsOf, STAR, STAR_LABELS, starsFor } from '@/lib/modes/puzzle'
@@ -28,6 +29,8 @@ export default function PuzzleResult({
   const startedAt = useGameStore((s) => s.startedAt)
   const endedAt = useGameStore((s) => s.endedAt)
   const usedPowerUps = useGameStore((s) => s.usedPowerUps)
+  // Espera la onda que revela las minas
+  const revealing = useGameStore((s) => s.revealing)
   const [, navigate] = useLocation()
   // Partida cerrada con "Ver tablero"; una nueva vuelve a abrirlo
   const [dismissed, setDismissed] = useState<number | null>(null)
@@ -40,7 +43,7 @@ export default function PuzzleResult({
 
   return (
     <Modal
-      open={over && endedAt !== dismissed}
+      open={over && !revealing && endedAt !== dismissed}
       onClose={() => setDismissed(endedAt)}
       title={won ? `¡Nivel ${level} superado!` : 'Boom 💥'}
     >
@@ -55,7 +58,11 @@ export default function PuzzleResult({
                 key={bit}
                 className={stars & bit ? 'text-slate-200' : 'text-slate-500'}
               >
-                {stars & bit ? '★' : '☆'} {label}
+                <Icon
+                  e="⭐"
+                  className={stars & bit ? '' : 'opacity-30 grayscale'}
+                />{' '}
+                {label}
                 {bit === STAR.time && (
                   <span className="font-mono text-slate-400">
                     {' '}
@@ -80,7 +87,7 @@ export default function PuzzleResult({
           . Mismo tablero, otra oportunidad.
         </p>
       )}
-      {reward && <RewardSummary key={endedAt} reward={reward} />}
+      {reward && !revealing && <RewardSummary key={endedAt} reward={reward} />}
       <div className="flex flex-col gap-2">
         {won ? (
           <Button

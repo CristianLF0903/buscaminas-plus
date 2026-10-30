@@ -7,11 +7,15 @@ import { THEME_IDS, THEMES } from '@/lib/themes'
 import type { ThemeId } from '@/lib/themes'
 import { ownsTheme, usePlayerStore } from '@/store/usePlayerStore'
 import { useSettingsStore } from '@/store/useSettingsStore'
+import Icon from '@/components/ui/Icon'
+import IconText from '@/components/ui/IconText'
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3 rounded-xl bg-slate-800 p-4">
-      <h2 className="font-semibold">{title}</h2>
+      <h2 className="font-semibold">
+        <IconText>{title}</IconText>
+      </h2>
       {children}
     </section>
   )
@@ -45,7 +49,9 @@ function ThemeOption({
       >
         {swatches}
         <span className="flex-1 text-sm">{theme.name}</span>
-        <span className="text-xs text-amber-300">🔒 {theme.price} 🪙</span>
+        <span className="text-xs text-amber-300">
+          <Icon e="🔒" /> {theme.price} <Icon e="🪙" />
+        </span>
       </Link>
     )
   }
@@ -106,7 +112,7 @@ export default function Settings() {
             }}
             disabled={!settings.sound}
           >
-            ▶ Probar
+            <Icon e="▶" /> Probar
           </Button>
         </div>
         <label className="flex items-center gap-3 text-sm text-slate-300">
