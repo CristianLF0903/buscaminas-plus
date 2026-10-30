@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { recordKey, resetPlayer, usePlayerStore } from '@/store/usePlayerStore'
+import { THEMES } from '@/lib/themes'
+import {
+  ownsTheme,
+  recordKey,
+  resetPlayer,
+  usePlayerStore,
+} from '@/store/usePlayerStore'
 import type { GameResult } from '@/store/usePlayerStore'
 import { STARTER_GIFT } from '@/lib/economy/starterGift'
 import { ALL_STARS, STAR } from '@/lib/modes/puzzle'
@@ -152,7 +158,47 @@ describe('usePlayerStore', () => {
     expect(stats.won).toBe(3)
     expect(stats.currentWinStreak).toBe(1)
     expect(stats.bestWinStreak).toBe(2)
-    expect(stats.byKey['classic:easy']).toEqual({ played: 3, won: 2 })
+    expect(stats.byKey['classic:easy']).toMatchObject({ played: 3, won: 2 })
+  })
+
+  it('stats por modo: racha, tiempo de victorias, monedas y power-ups', () => {
+    state().finishGame(win({ timeMs: 30_000, usedPowerUps: 1 }))
+    state().finishGame(win({ timeMs: 50_000 }))
+    state().finishGame(win({ won: false, usedPowerUps: 2 }))
+    state().finishGame(win({ timeMs: 40_000 }))
+    const { stats, coins } = state()
+    expect(stats.byKey['classic:easy']).toEqual({
+      played: 4,
+      won: 3,
+      streak: 1,
+      bestStreak: 2,
+      winTimeMs: 120_000,
+    })
+    expect(stats.powerUpsUsed).toBe(3)
+    expect(stats.coinsEarned).toBe(coins)
+  })
+
+  it('temas: los gratis son tuyos, los de pago se compran una vez', () => {
+    expect(ownsTheme(state(), 'minimal')).toBe(true)
+    expect(ownsTheme(state(), 'retro')).toBe(false)
+    expect(state().buyTheme('retro')).toBe(false) // sin monedas
+    state().addCoins(THEMES.retro.price + 10)
+    expect(state().buyTheme('retro')).toBe(true)
+    expect(state().coins).toBe(10)
+    expect(ownsTheme(state(), 'retro')).toBe(true)
+    expect(state().buyTheme('retro')).toBe(false) // ya es tuyo
+    expect(state().buyTheme('classic')).toBe(false) // gratis
+    expect(state().coins).toBe(10)
+  })
+
+  it('resetStats borra solo las estadísticas', () => {
+    state().finishGame(win())
+    const { coins, records } = state()
+    state().resetStats()
+    expect(state().stats.played).toBe(0)
+    expect(state().stats.byKey).toEqual({})
+    expect(state().coins).toBe(coins)
+    expect(state().records).toEqual(records)
   })
 
   it('finishGame paga recompensa con récord', () => {

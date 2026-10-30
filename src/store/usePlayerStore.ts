@@ -5,10 +5,13 @@ import { calculateReward } from '@/lib/economy/rewards'
 import { STARTER_GIFT } from '@/lib/economy/starterGift'
 import { streakAt } from '@/lib/modes/daily'
 import { countStars, newStarsOf } from '@/lib/modes/puzzle'
+import { PLAYER_STORAGE_KEY } from '@/lib/progress'
 import type { DailyEntry } from '@/lib/modes/daily'
 import type { GameMode, RewardBreakdown } from '@/lib/economy/rewards'
 import { POWER_UP_IDS } from '@/lib/powerups/ids'
 import type { PowerUpId } from '@/lib/powerups/ids'
+import { isFreeTheme, THEMES } from '@/lib/themes'
+import type { ThemeId } from '@/lib/themes'
 
 export interface ModeRecord {
   bestTimeMs?: number
@@ -22,12 +25,26 @@ export interface ModeRecord {
   stars?: Record<number, number>
 }
 
+/** Estadísticas de un modo y dificultad (clave `recordKey`). */
+export interface KeyStats {
+  played: number
+  won: number
+  /** Campos añadidos después: datos viejos no los tienen. */
+  streak?: number
+  bestStreak?: number
+  /** Suma de los tiempos de las victorias, para el promedio. */
+  winTimeMs?: number
+}
+
 export interface PlayerStats {
   played: number
   won: number
   currentWinStreak: number
   bestWinStreak: number
-  byKey: Record<string, { played: number; won: number }>
+  byKey: Record<string, KeyStats>
+  /** Monedas ganadas jugando (sin compras ni regalos). */
+  coinsEarned?: number
+  powerUpsUsed?: number
 }
 
 export interface GameResult {
@@ -56,6 +73,8 @@ export interface PlayerState {
   daily: Record<string, DailyEntry>
   /** Regalo de bienvenida ya reclamado. */
   starterGiftClaimed: boolean
+  /** Temas de pago comprados (los gratis no se guardan). */
+  ownedThemes: ThemeId[]
 
   addCoins: (amount: number) => void
   /** false (sin cambios) si no alcanza. */
@@ -71,6 +90,10 @@ export interface PlayerState {
   submitResult: (result: GameResult) => { isRecord: boolean }
   /** `submitResult` + recompensa + monedas, en una sola actualización. */
   finishGame: (result: GameResult) => RewardBreakdown & { isRecord: boolean }
+  /** Cobra un tema de pago. false si ya es tuyo, es gratis o no alcanza. */
+  buyTheme: (id: ThemeId) => boolean
+  /** Borra solo las estadísticas: récords, monedas y progreso se quedan. */
+  resetStats: () => void
   /** Da el regalo de bienvenida una sola vez. false si ya se reclamó. */
   claimStarterGift: () => boolean
 }
@@ -84,20 +107,29 @@ const emptyInventory = () =>
     number
   >
 
+const emptyStats = (): PlayerStats => ({
+  played: 0,
+  won: 0,
+  currentWinStreak: 0,
+  bestWinStreak: 0,
+  byKey: {},
+  coinsEarned: 0,
+  powerUpsUsed: 0,
+})
+
 const initialData = () => ({
   coins: 0,
   inventory: emptyInventory(),
   records: {} as Record<string, ModeRecord>,
   daily: {} as Record<string, DailyEntry>,
   starterGiftClaimed: false,
-  stats: {
-    played: 0,
-    won: 0,
-    currentWinStreak: 0,
-    bestWinStreak: 0,
-    byKey: {},
-  } as PlayerStats,
+  ownedThemes: [] as ThemeId[],
+  stats: emptyStats(),
 })
+
+/** Tema que se puede usar: gratis o comprado. */
+export const ownsTheme = (s: Pick<PlayerState, 'ownedThemes'>, id: ThemeId) =>
+  isFreeTheme(id) || s.ownedThemes.includes(id)
 
 /** Récord nuevo y si mejoró. Personalizado no registra récords. */
 function updateRecord(
@@ -153,15 +185,24 @@ function updateStats(stats: PlayerStats, r: GameResult): PlayerStats {
   const key = recordKey(r.mode, r.difficulty)
   const prev = stats.byKey[key] ?? { played: 0, won: 0 }
   const currentWinStreak = r.won ? stats.currentWinStreak + 1 : 0
+  const streak = r.won ? (prev.streak ?? 0) + 1 : 0
   return {
+    ...stats,
     played: stats.played + 1,
     won: stats.won + (r.won ? 1 : 0),
     currentWinStreak,
     bestWinStreak: Math.max(stats.bestWinStreak, currentWinStreak),
     byKey: {
       ...stats.byKey,
-      [key]: { played: prev.played + 1, won: prev.won + (r.won ? 1 : 0) },
+      [key]: {
+        played: prev.played + 1,
+        won: prev.won + (r.won ? 1 : 0),
+        streak,
+        bestStreak: Math.max(prev.bestStreak ?? 0, streak),
+        winTimeMs: (prev.winTimeMs ?? 0) + (r.won ? r.timeMs : 0),
+      },
     },
+    powerUpsUsed: (stats.powerUpsUsed ?? 0) + r.usedPowerUps,
   }
 }
 
@@ -238,8 +279,26 @@ export const usePlayerStore = create<PlayerState>()(
         }
         const { isRecord } = get().submitResult(result)
         const reward = calculateReward({ ...result, isRecord, newStars })
-        get().addCoins(reward.total)
+        set((s) => ({
+          coins: s.coins + reward.total,
+          stats: {
+            ...s.stats,
+            coinsEarned: (s.stats.coinsEarned ?? 0) + reward.total,
+          },
+        }))
         return { ...reward, isRecord }
+      },
+
+      resetStats: () => set({ stats: emptyStats() }),
+
+      buyTheme: (id) => {
+        const { price } = THEMES[id]
+        if (ownsTheme(get(), id) || get().coins < price) return false
+        set((s) => ({
+          coins: s.coins - price,
+          ownedThemes: [...s.ownedThemes, id],
+        }))
+        return true
       },
 
       claimStarterGift: () => {
@@ -259,7 +318,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
     }),
     {
-      name: 'buscaminas-player',
+      name: PLAYER_STORAGE_KEY,
       version: 2,
       storage: createJSONStorage(() => localStorage),
       partialize: ({
@@ -269,6 +328,7 @@ export const usePlayerStore = create<PlayerState>()(
         stats,
         daily,
         starterGiftClaimed,
+        ownedThemes,
       }) => ({
         coins,
         inventory,
@@ -276,6 +336,7 @@ export const usePlayerStore = create<PlayerState>()(
         stats,
         daily,
         starterGiftClaimed,
+        ownedThemes,
       }),
       migrate: (persisted, version) => {
         const p = (persisted ?? {}) as Partial<PlayerState>
@@ -291,6 +352,7 @@ export const usePlayerStore = create<PlayerState>()(
           ...current,
           ...p,
           inventory: { ...emptyInventory(), ...p.inventory },
+          ownedThemes: p.ownedThemes ?? [],
         }
       },
     },

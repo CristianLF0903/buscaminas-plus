@@ -109,10 +109,18 @@ export default function Home() {
         >
           🛒 Tienda
         </Link>
-        <Link href="/stats" className={buttonClass('ghost')}>
+        <Link
+          href="/stats"
+          {...prefetchProps('/stats')}
+          className={buttonClass('ghost')}
+        >
           📊 Estadísticas
         </Link>
-        <Link href="/settings" className={buttonClass('ghost')}>
+        <Link
+          href="/settings"
+          {...prefetchProps('/settings')}
+          className={buttonClass('ghost')}
+        >
           ⚙️ Ajustes
         </Link>
       </nav>

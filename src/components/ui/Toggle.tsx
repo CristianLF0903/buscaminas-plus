@@ -7,6 +7,8 @@ interface Props {
   /** Texto de ayuda bajo el label, enlazado con `aria-describedby`. */
   description?: string
   disabled?: boolean
+  /** Centrado (sobre un tablero) o a la izquierda (en listas de ajustes). */
+  align?: 'center' | 'start'
 }
 
 export default function Toggle({
@@ -15,10 +17,13 @@ export default function Toggle({
   label,
   description,
   disabled,
+  align = 'center',
 }: Props) {
   const descriptionId = useId()
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div
+      className={`flex flex-col gap-0.5 ${align === 'start' ? 'items-start' : 'items-center'}`}
+    >
       <button
         type="button"
         role="switch"

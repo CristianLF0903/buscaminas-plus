@@ -12,11 +12,21 @@ interface Props {
 export default function Modal({ open, onClose, title, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
 
+  // Al cerrar, el foco vuelve a donde estaba (p. ej. la celda del tablero)
+  const returnFocus = useRef<HTMLElement | null>(null)
+
   useEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
-    if (!open && dialog.open) dialog.close()
+    if (open && !dialog.open) {
+      returnFocus.current = document.activeElement as HTMLElement | null
+      dialog.showModal()
+    }
+    if (!open && dialog.open) {
+      dialog.close()
+      returnFocus.current?.focus?.()
+      returnFocus.current = null
+    }
   }, [open])
 
   return (

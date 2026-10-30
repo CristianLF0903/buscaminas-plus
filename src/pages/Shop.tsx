@@ -1,8 +1,14 @@
 import { useRef, useState } from 'react'
 import ShopItem from '@/components/shop/ShopItem'
+import ThemeItem from '@/components/shop/ThemeItem'
 import { POWER_UPS, SHOP_ITEMS } from '@/lib/powerups/catalog'
 import type { PowerUpId } from '@/lib/powerups/ids'
-import { usePlayerStore } from '@/store/usePlayerStore'
+import { THEME_IDS, THEMES } from '@/lib/themes'
+import type { ThemeId } from '@/lib/themes'
+import { ownsTheme, usePlayerStore } from '@/store/usePlayerStore'
+import { useSettingsStore } from '@/store/useSettingsStore'
+
+const PAID_THEMES = THEME_IDS.filter((id) => THEMES[id].price > 0)
 
 const TOAST_MS = 1800
 
@@ -10,21 +16,32 @@ export default function Shop() {
   const coins = usePlayerStore((s) => s.coins)
   const inventory = usePlayerStore((s) => s.inventory)
   const buyPowerUp = usePlayerStore((s) => s.buyPowerUp)
+  const buyTheme = usePlayerStore((s) => s.buyTheme)
+  const ownedThemes = usePlayerStore((s) => s.ownedThemes)
+  const activeTheme = useSettingsStore((s) => s.theme)
+  const updateSettings = useSettingsStore((s) => s.update)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null)
   const [bought, setBought] = useState<Partial<Record<PowerUpId, number>>>({})
   const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const toastCount = useRef(0)
 
+  const showToast = (text: string) => {
+    setToast({ id: ++toastCount.current, text })
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS)
+  }
+
   const buy = (id: PowerUpId) => {
     if (!buyPowerUp(id)) return
     const def = POWER_UPS[id]
     setBought((b) => ({ ...b, [id]: (b[id] ?? 0) + 1 }))
-    setToast({
-      id: ++toastCount.current,
-      text: `${def.icon} ${def.name} comprado`,
-    })
-    clearTimeout(toastTimer.current)
-    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS)
+    showToast(`${def.icon} ${def.name} comprado`)
+  }
+
+  const buyAndUse = (id: ThemeId) => {
+    if (!buyTheme(id)) return
+    updateSettings({ theme: id })
+    showToast(`🎨 Tema ${THEMES[id].name} activado`)
   }
 
   return (
@@ -56,6 +73,21 @@ export default function Shop() {
             />
           )
         })}
+      </ul>
+
+      <h2 className="text-lg font-semibold">Temas</h2>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {PAID_THEMES.map((id) => (
+          <ThemeItem
+            key={id}
+            theme={THEMES[id]}
+            owned={ownsTheme({ ownedThemes }, id)}
+            active={activeTheme === id}
+            coins={coins}
+            onBuy={() => buyAndUse(id)}
+            onUse={() => updateSettings({ theme: id })}
+          />
+        ))}
       </ul>
 
       <div

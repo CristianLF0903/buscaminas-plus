@@ -48,6 +48,12 @@ export interface GameState {
   notice: string | null
   /** Segundos extra de Tiempo+ (contrarreloj). */
   timeBonusMs: number
+  /** Celda de la última jugada: centro de la animación de revelado. */
+  origin: number | null
+  /** Tocar pone bandera en vez de revelar (alternativa al long-press). */
+  flagMode: boolean
+
+  setFlagMode: (on: boolean) => void
 
   newGame: (config: BoardConfig, seed?: number | string) => void
   /**
@@ -110,6 +116,7 @@ function initialState(config: BoardConfig, seed?: number | string) {
     hint: null,
     notice: null,
     timeBonusMs: 0,
+    origin: null as number | null,
   }
 }
 
@@ -156,6 +163,10 @@ export const useGameStore = create<GameState>()((set, get) => {
 
   return {
     ...initialState(DEFAULT_CONFIG),
+    // Preferencia del jugador: sobrevive a las partidas nuevas
+    flagMode: false,
+
+    setFlagMode: (on) => set({ flagMode: on }),
 
     newGame: (config, seed) => set(initialState(config, seed)),
 
@@ -167,6 +178,7 @@ export const useGameStore = create<GameState>()((set, get) => {
         board: mined,
         startedAt: Date.now(),
         guaranteed: guaranteed ?? null,
+        origin: firstClick,
         ...(carry ? { usedPowerUps } : {}),
         ...(carry || keepShield ? { shieldActive } : {}),
       })
@@ -176,6 +188,7 @@ export const useGameStore = create<GameState>()((set, get) => {
     reveal: (id) => {
       const { status, board, seed, config, generating, gameId } = get()
       if (status === 'won' || status === 'lost' || generating) return
+      set({ origin: id })
       if (status !== 'idle') {
         apply(engine.reveal(board, id))
         return
@@ -234,6 +247,7 @@ export const useGameStore = create<GameState>()((set, get) => {
 
     chord: (id) => {
       if (get().status !== 'playing') return
+      set({ origin: id })
       apply(engine.chord(get().board, id))
     },
 
@@ -287,7 +301,7 @@ export const useGameStore = create<GameState>()((set, get) => {
       if (!active || !canUsePowerUps(s)) return false
       if (active === 'radar') {
         if (!s.board.cells[id] || !spend(active)) return false
-        set({ activePowerUp: null })
+        set({ activePowerUp: null, origin: id })
         apply(applyRadar(get().board, id))
         if (get().status === 'playing') set({ notice: '📡 Área despejada.' })
         return true

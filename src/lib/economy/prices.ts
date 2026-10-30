@@ -8,3 +8,9 @@ export const POWER_UP_PRICES: Record<PowerUpId, number> = {
   radar: 40,
   shield: 80,
 }
+
+/** Temas de pago; los que no figuran son gratis. */
+export const THEME_PRICES = {
+  retro: 150,
+  neon: 250,
+} as const

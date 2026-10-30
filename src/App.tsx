@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import CoinBadge from '@/components/hud/CoinBadge'
+import GameFeedback from '@/components/layout/GameFeedback'
 import LeaveConfirmModal from '@/components/layout/LeaveConfirmModal'
 import MenuLink from '@/components/layout/MenuLink'
+import SettingsSync from '@/components/layout/SettingsSync'
 import { buttonClass } from '@/components/ui/buttonStyles'
 import PageSkeleton from '@/components/ui/PageSkeleton'
 import { PAGES } from '@/pages/routes'
@@ -15,13 +17,9 @@ const Endless = lazy(PAGES.endless)
 const PuzzleSelect = lazy(PAGES.puzzleSelect)
 const PuzzleLevel = lazy(PAGES.puzzleLevel)
 const Shop = lazy(PAGES.shop)
+const Stats = lazy(PAGES.stats)
+const Settings = lazy(PAGES.settings)
 const ComingSoon = lazy(PAGES.comingSoon)
-
-// Rutas del plan aún sin implementar
-const PENDING: [path: string, title: string][] = [
-  ['/stats', 'Estadísticas'],
-  ['/settings', 'Ajustes'],
-]
 
 function App() {
   const [location] = useLocation()
@@ -61,11 +59,8 @@ function App() {
             <Route path="/play/puzzle" component={PuzzleSelect} />
             <Route path="/play/puzzle/:level" component={PuzzleLevel} />
             <Route path="/shop" component={Shop} />
-            {PENDING.map(([path, title]) => (
-              <Route key={path} path={path}>
-                <ComingSoon title={title} />
-              </Route>
-            ))}
+            <Route path="/stats" component={Stats} />
+            <Route path="/settings" component={Settings} />
             <Route>
               <ComingSoon title="Página no encontrada" />
             </Route>
@@ -73,6 +68,8 @@ function App() {
         </Suspense>
       </main>
       <LeaveConfirmModal />
+      <SettingsSync />
+      <GameFeedback />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import type { CSSProperties } from 'react'
 import type { Cell as CellData } from '@/lib/engine/types'
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   detected?: boolean
   /** Resaltado de la Pista. */
   hinted?: 'safe' | 'mine'
+  /** Celda con el foco del teclado (roving tabindex). */
+  focused?: boolean
 }
 
 const HINT_RING: Record<'safe' | 'mine', string> = {
@@ -34,21 +37,37 @@ const NUMBER_COLORS: Record<number, string> = {
 const BASE =
   'flex size-(--cell) items-center justify-center rounded-sm text-sm font-bold leading-none select-none'
 
-function label(cell: CellData, lost: boolean): string {
-  if (cell.solid) return 'Bloque'
+function state(cell: CellData, lost: boolean, detected?: boolean): string {
+  if (cell.solid) return 'bloque'
   if (!cell.revealed) {
     if (cell.flagged) {
-      if (lost && !cell.mineWeight) return 'Bandera incorrecta'
-      return cell.doubleFlag ? 'Bandera doble' : 'Bandera'
+      if (lost && !cell.mineWeight) return 'bandera incorrecta'
+      return cell.doubleFlag ? 'bandera doble' : 'bandera'
     }
-    return 'Oculta'
+    if (detected !== undefined) {
+      return detected ? 'oculta, el detector dice mina' : 'oculta, segura'
+    }
+    return 'oculta'
   }
-  if (cell.mineWeight) return 'Mina'
-  if (cell.fog) return 'Niebla'
-  return cell.adjacent ? String(cell.adjacent) : 'Vacía'
+  if (cell.mineWeight) return cell.mineWeight === 2 ? 'mina doble' : 'mina'
+  if (cell.fog) return 'niebla, número oculto'
+  if (!cell.adjacent) return 'vacía'
+  return cell.adjacent === 1 ? '1 mina cerca' : `${cell.adjacent} minas cerca`
 }
 
-function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
+/** "Fila 3, columna 5: 2 minas cerca". */
+const label = (cell: CellData, lost: boolean, detected?: boolean) =>
+  `Fila ${cell.y + 1}, columna ${cell.x + 1}: ${state(cell, lost, detected)}`
+
+function Cell({
+  cell,
+  playable,
+  exploded,
+  lost,
+  detected,
+  hinted,
+  focused = false,
+}: Props) {
   if (!playable && !cell.solid) {
     // Fuera de la máscara: hueco que conserva la posición en la grilla
     return <div aria-hidden className="size-(--cell) rounded-sm bg-slate-950" />
@@ -89,7 +108,8 @@ function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
     }
     if (hinted) className += ` ${HINT_RING[hinted]}`
   } else if (cell.mineWeight) {
-    className = `${BASE} ${exploded ? 'bg-rose-600' : 'bg-slate-800'}`
+    // Explosión en cadena desde la mina pisada
+    className = `${BASE} cell-explode ${exploded ? 'bg-rose-600' : 'bg-slate-800'}`
     content = (
       <span className="relative">
         💣
@@ -101,20 +121,27 @@ function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
       </span>
     )
   } else {
-    className = `${BASE} bg-slate-800 ${NUMBER_COLORS[cell.adjacent] ?? 'text-pink-400'}`
+    className = `${BASE} cell-reveal bg-slate-800 ${NUMBER_COLORS[cell.adjacent] ?? 'text-pink-400'}`
     if (cell.fog) content = <span className="text-slate-500">?</span>
     else if (cell.adjacent) content = cell.adjacent
     // Pista fija: revelada desde el inicio
     if (cell.hint) className += ' ring-1 ring-inset ring-sky-400/50'
   }
 
+  // Posición para el retraso de las animaciones (ver index.css)
+  const style = { '--x': cell.x, '--y': cell.y } as CSSProperties
+
   return (
     <button
       type="button"
+      role="gridcell"
       data-id={cell.id}
-      aria-label={label(cell, lost)}
-      tabIndex={-1}
-      className={className}
+      data-n={cell.revealed && !cell.fog ? cell.adjacent : undefined}
+      data-hint={hinted}
+      aria-label={label(cell, lost, detected)}
+      tabIndex={focused ? 0 : -1}
+      className={`${className} focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-amber-300`}
+      style={style}
     >
       {content}
     </button>

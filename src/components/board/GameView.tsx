@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import FlagModeToggle from '@/components/hud/FlagModeToggle'
 import MineCounter from '@/components/hud/MineCounter'
 import PowerUpBar from '@/components/hud/PowerUpBar'
 import ResetButton from '@/components/hud/ResetButton'
@@ -25,13 +26,16 @@ export default function GameView({
 
   return (
     <div className="flex max-w-full flex-col items-center gap-3 rounded-xl bg-slate-800 p-2 shadow-xl sm:p-3">
-      <div className="flex w-full items-center justify-between gap-4">
+      <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
         <MineCounter />
-        <ResetButton disabled={!allowReset} />
+        <div className="flex items-center gap-2">
+          <FlagModeToggle />
+          <ResetButton disabled={!allowReset} />
+        </div>
         {timer}
       </div>
       <div className="relative max-w-full" aria-busy={generating}>
-        <Board />
+        <Board allowReset={allowReset} />
         {generating && (
           <div
             role="status"

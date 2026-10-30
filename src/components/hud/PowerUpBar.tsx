@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { GameMode } from '@/lib/economy/rewards'
 import { MAX_POWER_UPS_PER_GAME } from '@/lib/powerups'
 import { isAllowedIn, POWER_UPS } from '@/lib/powerups/catalog'
@@ -30,7 +30,26 @@ export default function PowerUpBar({ mode }: { mode: GameMode }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [active, cancel])
 
-  const ids = POWER_UP_IDS.filter((id) => isAllowedIn(id, mode))
+  const ids = useMemo(
+    () => POWER_UP_IDS.filter((id) => isAllowedIn(id, mode)),
+    [mode],
+  )
+
+  // Teclas 1–5: power-ups en el orden de la barra
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, dialog')) return
+      const n = Number(e.key)
+      if (!Number.isInteger(n) || n < 1 || n > ids.length) return
+      e.preventDefault()
+      activate(ids[n - 1])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [ids, activate])
+
   if (ids.length === 0) return null
 
   const message = active
@@ -40,7 +59,7 @@ export default function PowerUpBar({ mode }: { mode: GameMode }) {
   return (
     <div className="flex w-full flex-col items-center gap-2">
       <div className="flex flex-wrap items-center justify-center gap-2">
-        {ids.map((id) => {
+        {ids.map((id, i) => {
           const def = POWER_UPS[id]
           const count = inventory[id]
           const isActive = active === id || (id === 'shield' && shieldActive)
@@ -53,8 +72,9 @@ export default function PowerUpBar({ mode }: { mode: GameMode }) {
               onClick={() => activate(id)}
               disabled={disabled && !isActive}
               aria-pressed={isActive}
-              title={`${def.name}: ${def.description}`}
-              aria-label={`${def.name} (${count})`}
+              title={`${def.name} (tecla ${i + 1}): ${def.description}`}
+              aria-label={`${def.name} (${count}), tecla ${i + 1}`}
+              aria-keyshortcuts={String(i + 1)}
               className={`relative flex size-11 items-center justify-center rounded-lg text-xl transition ${
                 isActive
                   ? 'bg-amber-400/20 ring-2 ring-amber-400'

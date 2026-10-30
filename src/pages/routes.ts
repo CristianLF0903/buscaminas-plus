@@ -12,6 +12,8 @@ export const PAGES = {
   puzzleSelect: () => import('./play/PuzzleSelect'),
   puzzleLevel: () => import('./play/PuzzleLevel'),
   shop: () => import('./Shop'),
+  stats: () => import('./Stats'),
+  settings: () => import('./Settings'),
   comingSoon: () => import('./ComingSoon'),
 }
 
@@ -24,4 +26,6 @@ export const PREFETCH_BY_PATH: Partial<Record<string, () => Promise<unknown>>> =
     '/play/endless': PAGES.endless,
     '/play/puzzle': PAGES.puzzleSelect,
     '/shop': PAGES.shop,
+    '/stats': PAGES.stats,
+    '/settings': PAGES.settings,
   }
