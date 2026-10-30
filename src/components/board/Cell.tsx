@@ -30,8 +30,9 @@ const NUMBER_COLORS: Record<number, string> = {
   8: 'text-slate-400',
 }
 
+// Lado de la celda: `--cell`, lo define Board según el viewport
 const BASE =
-  'flex size-8 items-center justify-center rounded-sm text-sm font-bold leading-none select-none'
+  'flex size-(--cell) items-center justify-center rounded-sm text-sm font-bold leading-none select-none'
 
 function label(cell: CellData, lost: boolean): string {
   if (cell.solid) return 'Bloque'
@@ -48,7 +49,7 @@ function label(cell: CellData, lost: boolean): string {
 function Cell({ cell, playable, exploded, lost, detected, hinted }: Props) {
   if (!playable && !cell.solid) {
     // Fuera de la máscara: hueco que conserva la posición en la grilla
-    return <div aria-hidden className="size-8" />
+    return <div aria-hidden className="size-(--cell)" />
   }
 
   let className: string

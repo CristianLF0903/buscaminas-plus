@@ -3,8 +3,10 @@ import { useLocation } from 'wouter'
 import GameView from '@/components/board/GameView'
 import RewardSummary from '@/components/modals/RewardSummary'
 import Button from '@/components/ui/Button'
+import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { useTimeAttack } from '@/hooks/useTimeAttack'
 import type { TimeChange } from '@/hooks/useTimeAttack'
+import { LOGIC_TAG } from '@/lib/copy'
 import { LOW_TIME_MS, START_MS } from '@/lib/modes/timeAttack'
 import { formatTime } from '@/lib/time'
 import { recordKey, usePlayerStore } from '@/store/usePlayerStore'
@@ -60,6 +62,12 @@ function Run({ onRestart }: { onRestart: () => void }) {
     (s) => s.records[recordKey('timeAttack', 'default')]?.maxBoards ?? 0,
   )
   const [, navigate] = useLocation()
+  const live = session.status === 'running' || session.status === 'paused'
+  useConfirmLeave(
+    live
+      ? 'La sesión terminará aquí y cobrarás solo los tableros resueltos.'
+      : null,
+  )
 
   if (session.status === 'idle') {
     return (
@@ -92,12 +100,7 @@ function Run({ onRestart }: { onRestart: () => void }) {
           Resolviste{' '}
           <b className="font-mono text-emerald-400">{session.solved}</b>{' '}
           {session.solved === 1 ? 'tablero' : 'tableros'}
-          {session.failed > 0 && (
-            <>
-              {' '}
-              · 💥 {session.failed}
-            </>
-          )}
+          {session.failed > 0 && <> · 💥 {session.failed}</>}
         </p>
         {reward && <RewardSummary reward={reward} />}
         <div className="grid grid-cols-2 gap-2">
@@ -141,9 +144,7 @@ export default function TimeAttack() {
     <section className="flex w-full flex-col items-center gap-4">
       <div className="text-center">
         <h1 className="text-2xl font-bold">Contrarreloj</h1>
-        <p className="text-sm text-slate-400">
-          8×8 · 10 minas · sin adivinar
-        </p>
+        <p className="text-sm text-slate-400">8×8 · 10 minas · {LOGIC_TAG}</p>
       </div>
       <Run key={run} onRestart={() => setRun((n) => n + 1)} />
     </section>

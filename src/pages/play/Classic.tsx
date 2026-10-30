@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import GameView from '@/components/board/GameView'
+import ConfirmModal from '@/components/modals/ConfirmModal'
 import ResultModal from '@/components/modals/ResultModal'
 import Button from '@/components/ui/Button'
 import { buttonClass } from '@/components/ui/buttonStyles'
 import Toggle from '@/components/ui/Toggle'
+import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { useGameRewards } from '@/hooks/useGameRewards'
 import type { DescribeResult } from '@/hooks/useGameRewards'
+import { LOGIC_HELP, LOGIC_LABEL } from '@/lib/copy'
 import {
   CLASSIC_PRESETS,
   CUSTOM_LIMITS,
@@ -36,6 +39,17 @@ export default function Classic() {
   })
   const [errors, setErrors] = useState<string[]>([])
   const reward = useGameRewards(describeResult)
+  const playing = useGameStore((s) => s.status === 'playing')
+  // Cambio que descarta la partida en curso, esperando confirmación
+  const [pending, setPending] = useState<(() => void) | null>(null)
+
+  useConfirmLeave(playing ? 'Perderás la partida actual.' : null)
+
+  /** Aplica `change` ya, o tras confirmar si hay una partida en juego. */
+  const guard = (change: () => void) => {
+    if (useGameStore.getState().status === 'playing') setPending(() => change)
+    else change()
+  }
 
   // Partida nueva al entrar (el store puede traer una de otro modo)
   useEffect(() => {
@@ -44,11 +58,12 @@ export default function Classic() {
     newGame({ width, height, mines, noGuess: config.noGuess ?? true })
   }, [newGame])
 
-  const pickPreset = (key: ClassicPreset) => {
-    setDifficulty(key)
-    setErrors([])
-    newGame({ ...CLASSIC_PRESETS[key].config, noGuess })
-  }
+  const pickPreset = (key: ClassicPreset) =>
+    guard(() => {
+      setDifficulty(key)
+      setErrors([])
+      newGame({ ...CLASSIC_PRESETS[key].config, noGuess })
+    })
 
   const applyCustom = (e: FormEvent) => {
     e.preventDefault()
@@ -58,12 +73,12 @@ export default function Classic() {
       return
     }
     setErrors([])
-    newGame({ ...res.config, noGuess })
+    guard(() => newGame({ ...res.config, noGuess }))
   }
 
-  const toggleNoGuess = (value: boolean) => {
-    newGame({ ...useGameStore.getState().config, noGuess: value })
-  }
+  // El toggle refleja el store: si se cancela, no cambia
+  const toggleNoGuess = (value: boolean) =>
+    guard(() => newGame({ ...useGameStore.getState().config, noGuess: value }))
 
   const field = (key: keyof typeof custom, label: string, max: number) => (
     <label className="flex flex-col gap-1 text-xs text-slate-400">
@@ -118,7 +133,12 @@ export default function Classic() {
         </button>
       </div>
 
-      <Toggle checked={noGuess} onChange={toggleNoGuess} label="Sin adivinar" />
+      <Toggle
+        checked={noGuess}
+        onChange={toggleNoGuess}
+        label={LOGIC_LABEL}
+        description={LOGIC_HELP}
+      />
 
       {difficulty === 'custom' && (
         <form
@@ -150,6 +170,17 @@ export default function Classic() {
 
       <GameView mode="classic" />
       <ResultModal reward={reward} />
+      <ConfirmModal
+        open={pending !== null}
+        title="¿Empezar un tablero nuevo?"
+        message="Perderás la partida actual."
+        confirmLabel="Reiniciar"
+        onCancel={() => setPending(null)}
+        onConfirm={() => {
+          pending?.()
+          setPending(null)
+        }}
+      />
     </section>
   )
 }

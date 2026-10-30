@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { recordKey, resetPlayer, usePlayerStore } from '@/store/usePlayerStore'
 import type { GameResult } from '@/store/usePlayerStore'
+import { STARTER_GIFT } from '@/lib/economy/starterGift'
 
 const state = () => usePlayerStore.getState()
 
@@ -192,7 +193,7 @@ describe('usePlayerStore', () => {
     state().addPowerUp('shield')
     state().submitResult(win())
     const saved = JSON.parse(localStorage.getItem('buscaminas-player')!)
-    expect(saved.version).toBe(1)
+    expect(saved.version).toBe(2)
     expect(saved.state.coins).toBe(42)
     expect(saved.state.addCoins).toBeUndefined()
 
@@ -203,6 +204,42 @@ describe('usePlayerStore', () => {
     expect(state().coins).toBe(42)
     expect(state().inventory.shield).toBe(1)
     expect(state().records['classic:easy'].bestTimeMs).toBe(60_000)
+  })
+
+  it('regalo de bienvenida: una sola vez', () => {
+    expect(state().starterGiftClaimed).toBe(false)
+    expect(state().claimStarterGift()).toBe(true)
+    expect(state().coins).toBe(STARTER_GIFT.coins)
+    expect(state().inventory.hint).toBe(1)
+    expect(state().inventory.radar).toBe(1)
+    expect(state().starterGiftClaimed).toBe(true)
+
+    expect(state().claimStarterGift()).toBe(false)
+    expect(state().coins).toBe(STARTER_GIFT.coins)
+    expect(state().inventory.hint).toBe(1)
+  })
+
+  it('migración v1 → v2: los jugadores existentes reciben el regalo', async () => {
+    localStorage.setItem(
+      'buscaminas-player',
+      JSON.stringify({
+        state: { coins: 100, inventory: { hint: 2 }, starterGiftClaimed: true },
+        version: 1,
+      }),
+    )
+    await usePlayerStore.persist.rehydrate()
+    expect(state().coins).toBe(100)
+    expect(state().starterGiftClaimed).toBe(false)
+    state().claimStarterGift()
+    expect(state().inventory.hint).toBe(3)
+
+    // En v2 el flag se respeta
+    localStorage.setItem(
+      'buscaminas-player',
+      JSON.stringify({ state: { starterGiftClaimed: true }, version: 2 }),
+    )
+    await usePlayerStore.persist.rehydrate()
+    expect(state().starterGiftClaimed).toBe(true)
   })
 
   it('rehidratar datos viejos completa power-ups nuevos', async () => {

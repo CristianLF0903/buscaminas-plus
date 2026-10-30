@@ -1,7 +1,8 @@
-import { useCallback, useRef } from 'react'
-import type { MouseEvent, PointerEvent } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
+import type { CSSProperties, MouseEvent, PointerEvent } from 'react'
+import { useBoardOrientation } from '@/hooks/useBoardOrientation'
 import { useLongPress } from '@/hooks/useLongPress'
-import { isPlayable } from '@/lib/engine/graph'
+import { index, isPlayable } from '@/lib/engine/graph'
 import { useGameStore } from '@/store/useGameStore'
 import Cell from './Cell'
 
@@ -22,6 +23,20 @@ export default function Board() {
   const toggleFlag = useGameStore((s) => s.toggleFlag)
   const chord = useGameStore((s) => s.chord)
   const pointerType = useRef('mouse')
+  const { transposed, cellPx } = useBoardOrientation(board.width, board.height)
+
+  // Transpuesto, la fila visual r es la columna x = r del tablero. Solo cambia
+  // el orden de dibujo: ids, motor y store siguen igual.
+  const cells = useMemo(() => {
+    if (!transposed) return board.cells
+    const { width, height } = board
+    const out = []
+    for (let x = 0; x < width; x++) {
+      for (let y = 0; y < height; y++) out.push(board.cells[index(x, y, width)])
+    }
+    return out
+  }, [transposed, board])
+  const columns = transposed ? board.height : board.width
 
   const { handlers, consumeLongPress } = useLongPress(
     useCallback(
@@ -71,13 +86,19 @@ export default function Board() {
         role="grid"
         aria-label="Tablero"
         className={`grid w-max touch-manipulation gap-0.5 bg-slate-900 p-1 [-webkit-touch-callout:none] ${activePowerUp ? 'cursor-crosshair outline-2 outline-amber-400 [&_button]:cursor-crosshair' : ''}`}
-        style={{ gridTemplateColumns: `repeat(${board.width}, 2rem)` }}
+        data-transposed={transposed || undefined}
+        style={
+          {
+            '--cell': `${cellPx}px`,
+            gridTemplateColumns: `repeat(${columns}, var(--cell))`,
+          } as CSSProperties
+        }
         {...handlers}
         onPointerDown={onPointerDown}
         onClick={onClick}
         onContextMenu={onContextMenu}
       >
-        {board.cells.map((cell) => (
+        {cells.map((cell) => (
           <Cell
             key={cell.id}
             cell={cell}

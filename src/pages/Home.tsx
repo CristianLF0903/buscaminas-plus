@@ -1,5 +1,8 @@
 import { Link } from 'wouter'
+import WelcomeGift from '@/components/home/WelcomeGift'
 import { buttonClass } from '@/components/ui/buttonStyles'
+import { HOME_TAGLINE } from '@/lib/copy'
+import { PREFETCH_BY_PATH } from '@/pages/routes'
 
 interface Mode {
   href: string
@@ -47,6 +50,16 @@ const MODES: Mode[] = [
   },
 ]
 
+/** Descarga la página antes del clic: hover o foco sobre el enlace. */
+const prefetch = (href: string) => {
+  void PREFETCH_BY_PATH[href]?.()
+}
+
+const prefetchProps = (href: string) => ({
+  onPointerEnter: () => prefetch(href),
+  onFocus: () => prefetch(href),
+})
+
 export default function Home() {
   return (
     <section className="flex w-full max-w-3xl flex-col gap-8">
@@ -54,14 +67,17 @@ export default function Home() {
         <h1 className="text-5xl font-bold tracking-tight">
           Buscaminas<span className="text-emerald-400">+</span>
         </h1>
-        <p className="mt-2 text-slate-400">Sin adivinar. Con power-ups.</p>
+        <p className="mt-2 text-slate-400">{HOME_TAGLINE}</p>
       </div>
+
+      <WelcomeGift />
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {MODES.map((mode) => (
           <li key={mode.href}>
             <Link
               href={mode.href}
+              {...prefetchProps(mode.href)}
               className="group flex h-full items-start gap-4 rounded-xl bg-slate-800 p-4 ring-emerald-400/60 transition hover:bg-slate-700 hover:ring-2 focus-visible:ring-2 focus-visible:outline-none"
             >
               <span className="text-3xl" aria-hidden>
@@ -86,7 +102,11 @@ export default function Home() {
       </ul>
 
       <nav className="flex flex-wrap justify-center gap-2">
-        <Link href="/shop" className={buttonClass('ghost')}>
+        <Link
+          href="/shop"
+          {...prefetchProps('/shop')}
+          className={buttonClass('ghost')}
+        >
           🛒 Tienda
         </Link>
         <Link href="/stats" className={buttonClass('ghost')}>

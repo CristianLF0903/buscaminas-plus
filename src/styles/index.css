@@ -36,3 +36,8 @@
     }
   }
 }
+
+/* Ancho estable: la barra de scroll no cambia el espacio del tablero */
+html {
+  scrollbar-gutter: stable;
+}

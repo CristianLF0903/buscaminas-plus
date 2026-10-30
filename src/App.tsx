@@ -1,14 +1,17 @@
 import { lazy, Suspense } from 'react'
-import { Link, Route, Switch, useLocation } from 'wouter'
+import { Route, Switch, useLocation } from 'wouter'
 import CoinBadge from '@/components/hud/CoinBadge'
+import HeaderNav from '@/components/layout/HeaderNav'
+import PageSkeleton from '@/components/ui/PageSkeleton'
+import { PAGES } from '@/pages/routes'
 
-const Home = lazy(() => import('@/pages/Home'))
-const Classic = lazy(() => import('@/pages/play/Classic'))
-const Daily = lazy(() => import('@/pages/play/Daily'))
-const TimeAttack = lazy(() => import('@/pages/play/TimeAttack'))
-const Endless = lazy(() => import('@/pages/play/Endless'))
-const Shop = lazy(() => import('@/pages/Shop'))
-const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
+const Home = lazy(PAGES.home)
+const Classic = lazy(PAGES.classic)
+const Daily = lazy(PAGES.daily)
+const TimeAttack = lazy(PAGES.timeAttack)
+const Endless = lazy(PAGES.endless)
+const Shop = lazy(PAGES.shop)
+const ComingSoon = lazy(PAGES.comingSoon)
 
 // Rutas del plan aún sin implementar
 const PENDING: [path: string, title: string][] = [
@@ -25,21 +28,14 @@ function App() {
     <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
       <header className="flex h-14 items-center justify-between gap-4 px-4">
         {/* En el menú el título grande ya hace de logo */}
-        {location !== '/' && (
-          <Link
-            href="/"
-            className="text-lg font-bold tracking-tight hover:text-emerald-300"
-          >
-            Buscaminas<span className="text-emerald-400">+</span>
-          </Link>
-        )}
+        {location !== '/' && <HeaderNav />}
         <div className="ml-auto">
           <CoinBadge />
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center px-4 pb-8">
-        <Suspense fallback={<p className="py-16 text-slate-400">Cargando…</p>}>
+      <main className="flex flex-1 flex-col items-center px-2 pb-8 sm:px-4">
+        <Suspense fallback={<PageSkeleton />}>
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/play/classic" component={Classic} />

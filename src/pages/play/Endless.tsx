@@ -6,7 +6,9 @@ import Button from '@/components/ui/Button'
 import { buttonClass } from '@/components/ui/buttonStyles'
 import Modal from '@/components/ui/Modal'
 import Toggle from '@/components/ui/Toggle'
+import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { useEndless } from '@/hooks/useEndless'
+import { LOGIC_HELP, LOGIC_LABEL, LOGIC_TAG } from '@/lib/copy'
 import { endlessMultiplier } from '@/lib/economy/rewards'
 import { CLASSIC_PRESETS } from '@/lib/modes/classic'
 import { ENDLESS_DIFFICULTIES } from '@/lib/modes/endless'
@@ -41,6 +43,12 @@ function Run({
   const [, navigate] = useLocation()
   const best = record?.maxBoards ?? 0
   const clean = record?.maxBoardsNoPowerUps ?? 0
+  const live = run.status === 'playing' || run.status === 'between'
+  useConfirmLeave(
+    live
+      ? `La racha terminará aquí y cobrarás ${run.solved} ${boards(run.solved)}.`
+      : null,
+  )
 
   if (run.status === 'idle') {
     return (
@@ -68,7 +76,8 @@ function Run({
         <Toggle
           checked={noGuess}
           onChange={(value) => onChoice({ ...choice, noGuess: value })}
-          label="Sin adivinar"
+          label={LOGIC_LABEL}
+          description={LOGIC_HELP}
         />
         <p className="text-slate-300">
           Tableros seguidos hasta que pises una mina. Cada tablero paga más que
@@ -184,7 +193,7 @@ export default function Endless() {
         <h1 className="text-2xl font-bold">Infinito</h1>
         <p className="text-sm text-slate-400">
           {CLASSIC_PRESETS[difficulty].label}
-          {noGuess ? ' · sin adivinar' : ''}
+          {noGuess ? ` · ${LOGIC_TAG}` : ''}
         </p>
       </div>
       <Run

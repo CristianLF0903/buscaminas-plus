@@ -3,9 +3,11 @@ import GameView from '@/components/board/GameView'
 import ResultModal from '@/components/modals/ResultModal'
 import ShareCard from '@/components/modals/ShareCard'
 import Button from '@/components/ui/Button'
+import { useConfirmLeave } from '@/hooks/useConfirmLeave'
 import { useGameRewards } from '@/hooks/useGameRewards'
 import type { DescribeResult } from '@/hooks/useGameRewards'
 import { useNow } from '@/hooks/useNow'
+import { LOGIC_TAG } from '@/lib/copy'
 import {
   DAILY_CONFIG,
   dailyFirstClick,
@@ -102,6 +104,15 @@ export default function Daily() {
     [date],
   )
   const reward = useGameRewards(describe)
+  const playing = useGameStore((s) => s.status === 'playing')
+
+  // La partida sigue en el store al salir: se puede volver y terminarla.
+  // Se pierde (derrota) si otra partida la reemplaza o se recarga la página.
+  useConfirmLeave(
+    holdsGame && playing
+      ? 'Tu intento de hoy queda en pausa, pero el reloj sigue corriendo. Puedes volver a terminarlo; si juegas otro modo o recargas la página, contará como intento usado.'
+      : null,
+  )
 
   // Intento empezado pero la partida ya no está (recarga o salida): derrota
   useEffect(() => {
@@ -134,7 +145,7 @@ export default function Daily() {
       <div className="text-center">
         <h1 className="text-2xl font-bold">Reto diario #{number}</h1>
         <p className="text-sm text-slate-400">
-          {date} · 16×16 · 40 minas · sin adivinar · sin power-ups
+          {date} · 16×16 · 40 minas · {LOGIC_TAG} · sin power-ups
         </p>
       </div>
 

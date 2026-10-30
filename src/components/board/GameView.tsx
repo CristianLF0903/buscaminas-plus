@@ -3,6 +3,7 @@ import MineCounter from '@/components/hud/MineCounter'
 import PowerUpBar from '@/components/hud/PowerUpBar'
 import ResetButton from '@/components/hud/ResetButton'
 import Timer from '@/components/hud/Timer'
+import { LOGIC_FALLBACK } from '@/lib/copy'
 import type { GameMode } from '@/lib/economy/rewards'
 import { useGameStore } from '@/store/useGameStore'
 import Board from './Board'
@@ -23,7 +24,7 @@ export default function GameView({
   const guaranteed = useGameStore((s) => s.guaranteed)
 
   return (
-    <div className="flex max-w-full flex-col items-center gap-3 rounded-xl bg-slate-800 p-3 shadow-xl">
+    <div className="flex max-w-full flex-col items-center gap-3 rounded-xl bg-slate-800 p-2 shadow-xl sm:p-3">
       <div className="flex w-full items-center justify-between gap-4">
         <MineCounter />
         <ResetButton disabled={!allowReset} />
@@ -44,8 +45,7 @@ export default function GameView({
       <PowerUpBar mode={mode} />
       {guaranteed === false && (
         <p role="note" className="text-center text-xs text-amber-400">
-          No se encontró un tablero sin adivinar con esta densidad: puede que
-          necesites suerte.
+          {LOGIC_FALLBACK}
         </p>
       )}
     </div>

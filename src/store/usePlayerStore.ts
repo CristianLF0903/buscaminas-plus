@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import { POWER_UP_PRICES } from '@/lib/economy/prices'
 import { calculateReward } from '@/lib/economy/rewards'
+import { STARTER_GIFT } from '@/lib/economy/starterGift'
 import { streakAt } from '@/lib/modes/daily'
 import type { DailyEntry } from '@/lib/modes/daily'
 import type { GameMode, RewardBreakdown } from '@/lib/economy/rewards'
@@ -51,6 +52,8 @@ export interface PlayerState {
   stats: PlayerStats
   /** Reto diario por fecha UTC: un intento por día. */
   daily: Record<string, DailyEntry>
+  /** Regalo de bienvenida ya reclamado. */
+  starterGiftClaimed: boolean
 
   addCoins: (amount: number) => void
   /** false (sin cambios) si no alcanza. */
@@ -66,6 +69,8 @@ export interface PlayerState {
   submitResult: (result: GameResult) => { isRecord: boolean }
   /** `submitResult` + recompensa + monedas, en una sola actualización. */
   finishGame: (result: GameResult) => RewardBreakdown & { isRecord: boolean }
+  /** Da el regalo de bienvenida una sola vez. false si ya se reclamó. */
+  claimStarterGift: () => boolean
 }
 
 export const recordKey = (mode: GameMode, difficulty: string) =>
@@ -82,6 +87,7 @@ const initialData = () => ({
   inventory: emptyInventory(),
   records: {} as Record<string, ModeRecord>,
   daily: {} as Record<string, DailyEntry>,
+  starterGiftClaimed: false,
   stats: {
     played: 0,
     won: 0,
@@ -222,20 +228,49 @@ export const usePlayerStore = create<PlayerState>()(
         get().addCoins(reward.total)
         return { ...reward, isRecord }
       },
+
+      claimStarterGift: () => {
+        if (get().starterGiftClaimed) return false
+        set((s) => {
+          const inventory = { ...s.inventory }
+          for (const [id, n] of Object.entries(STARTER_GIFT.powerUps)) {
+            inventory[id as PowerUpId] += n
+          }
+          return {
+            coins: s.coins + STARTER_GIFT.coins,
+            inventory,
+            starterGiftClaimed: true,
+          }
+        })
+        return true
+      },
     }),
     {
       name: 'buscaminas-player',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ coins, inventory, records, stats, daily }) => ({
+      partialize: ({
         coins,
         inventory,
         records,
         stats,
         daily,
+        starterGiftClaimed,
+      }) => ({
+        coins,
+        inventory,
+        records,
+        stats,
+        daily,
+        starterGiftClaimed,
       }),
-      // Punto de entrada para cambios de esquema futuros (version 2, 3...)
-      migrate: (persisted) => persisted as PlayerState,
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<PlayerState>
+        // v2: regalo de bienvenida, también para jugadores existentes
+        if (version < 2)
+          return { ...p, starterGiftClaimed: false } as PlayerState
+        return p as PlayerState
+      },
       // Power-ups nuevos en el catálogo arrancan en 0
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<PlayerState>
