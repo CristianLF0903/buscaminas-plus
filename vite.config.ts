@@ -34,6 +34,16 @@ export default defineConfig({
           environment: 'jsdom',
         },
       },
+      {
+        // Tests lentos (generación masiva): `npm run test:slow`
+        extends: true,
+        test: {
+          name: 'slow',
+          include: ['tests/**/*.slow.ts'],
+          environment: 'node',
+          testTimeout: 120_000,
+        },
+      },
     ],
   },
 })
