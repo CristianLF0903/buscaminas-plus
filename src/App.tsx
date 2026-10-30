@@ -1,7 +1,9 @@
 import { lazy, Suspense } from 'react'
 import { Route, Switch, useLocation } from 'wouter'
 import CoinBadge from '@/components/hud/CoinBadge'
-import HeaderNav from '@/components/layout/HeaderNav'
+import LeaveConfirmModal from '@/components/layout/LeaveConfirmModal'
+import MenuLink from '@/components/layout/MenuLink'
+import { buttonClass } from '@/components/ui/buttonStyles'
 import PageSkeleton from '@/components/ui/PageSkeleton'
 import { PAGES } from '@/pages/routes'
 
@@ -28,13 +30,27 @@ function App() {
     <div className="flex min-h-screen flex-col bg-slate-900 text-slate-100">
       <header className="flex h-14 items-center justify-between gap-4 px-4">
         {/* En el menú el título grande ya hace de logo */}
-        {location !== '/' && <HeaderNav />}
+        {location !== '/' && (
+          <MenuLink className="text-lg font-bold tracking-tight hover:text-emerald-300">
+            Buscaminas<span className="text-emerald-400">+</span>
+          </MenuLink>
+        )}
         <div className="ml-auto">
           <CoinBadge />
         </div>
       </header>
 
       <main className="flex flex-1 flex-col items-center px-2 pb-8 sm:px-4">
+        {location !== '/' && (
+          <div className="mb-2 w-full max-w-3xl">
+            <MenuLink
+              aria-label="Volver al menú principal"
+              className={`${buttonClass('ghost')} -ml-2`}
+            >
+              ← Menú
+            </MenuLink>
+          </div>
+        )}
         <Suspense fallback={<PageSkeleton />}>
           <Switch>
             <Route path="/" component={Home} />
@@ -54,6 +70,7 @@ function App() {
           </Switch>
         </Suspense>
       </main>
+      <LeaveConfirmModal />
     </div>
   )
 }
