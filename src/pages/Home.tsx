@@ -29,7 +29,7 @@ const MODES: Mode[] = [
     icon: '⏱️',
     title: 'Contrarreloj',
     description: 'Cada tablero resuelto suma segundos.',
-    ready: false,
+    ready: true,
   },
   {
     href: '/play/endless',

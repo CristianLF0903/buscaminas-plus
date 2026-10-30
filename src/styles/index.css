@@ -5,6 +5,14 @@
   --animate-delayed-fade-in: delayed-fade-in 0.2s ease-out 0.15s both;
   --animate-bump: bump 0.35s ease-out;
   --animate-toast-in: toast-in 0.2s ease-out;
+  --animate-float-up: float-up 1s ease-out both;
+
+  @keyframes float-up {
+    to {
+      opacity: 0;
+      transform: translateY(-1.5rem);
+    }
+  }
 
   @keyframes bump {
     50% {

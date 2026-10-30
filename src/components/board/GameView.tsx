@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import MineCounter from '@/components/hud/MineCounter'
 import PowerUpBar from '@/components/hud/PowerUpBar'
 import ResetButton from '@/components/hud/ResetButton'
@@ -10,10 +11,13 @@ import Board from './Board'
 export default function GameView({
   mode,
   allowReset = true,
+  timer = <Timer />,
 }: {
   mode: GameMode
   /** false en modos de un solo intento (reto diario). */
   allowReset?: boolean
+  /** Reemplaza el cronómetro (contrarreloj lleva su propio reloj). */
+  timer?: ReactNode
 }) {
   const generating = useGameStore((s) => s.generating)
   const guaranteed = useGameStore((s) => s.guaranteed)
@@ -23,7 +27,7 @@ export default function GameView({
       <div className="flex w-full items-center justify-between gap-4">
         <MineCounter />
         <ResetButton disabled={!allowReset} />
-        <Timer />
+        {timer}
       </div>
       <div className="relative max-w-full" aria-busy={generating}>
         <Board />

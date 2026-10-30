@@ -145,3 +145,45 @@ describe('guaranteed', () => {
     expect(state().guaranteed).toBe(true)
   })
 })
+
+describe('loadBoard', () => {
+  const config = { width: 9, height: 9, mines: 10 }
+  const mined = () => {
+    state().newGame(config, 'pre')
+    state().reveal(40)
+    // Tablero minado sin revelar, como lo entrega el generador
+    const { board } = state()
+    return {
+      ...board,
+      cells: board.cells.map((c) => ({ ...c, revealed: false, flagged: false })),
+    }
+  }
+
+  it('arranca jugando con el primer clic abierto', () => {
+    const board = mined()
+    state().loadBoard(config, board, { seed: 'pre', firstClick: 40 })
+    expect(state().status).toBe('playing')
+    expect(state().startedAt).not.toBeNull()
+    expect(state().board.cells[40].revealed).toBe(true)
+    expect(state().seed).toBe('pre')
+  })
+
+  it('con carry conserva power-ups usados y escudo', () => {
+    const board = mined()
+    useGameStore.setState({ usedPowerUps: 2, shieldActive: true })
+    state().loadBoard(config, board, { seed: 'a', firstClick: 40, carry: true })
+    expect(state().usedPowerUps).toBe(2)
+    expect(state().shieldActive).toBe(true)
+
+    state().loadBoard(config, board, { seed: 'b', firstClick: 40 })
+    expect(state().usedPowerUps).toBe(0)
+    expect(state().shieldActive).toBe(false)
+  })
+
+  it('cada tablero es una partida nueva (gameId distinto)', () => {
+    const board = mined()
+    const before = state().gameId
+    state().loadBoard(config, board, { seed: 'a', firstClick: 40 })
+    expect(state().gameId).not.toBe(before)
+  })
+})

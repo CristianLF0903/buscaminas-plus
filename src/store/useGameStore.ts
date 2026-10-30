@@ -50,6 +50,20 @@ export interface GameState {
   timeBonusMs: number
 
   newGame: (config: BoardConfig, seed?: number | string) => void
+  /**
+   * Arranca con un tablero ya minado (pre-generado) abriendo `firstClick`.
+   * `carry` conserva power-ups usados y escudo: varios tableros, una partida.
+   */
+  loadBoard: (
+    config: BoardConfig,
+    board: Board,
+    opts: {
+      seed: number | string
+      firstClick: number
+      guaranteed?: boolean | null
+      carry?: boolean
+    },
+  ) => void
   /** Asíncrono solo en el primer clic con `config.noGuess`. */
   reveal: (id: number) => void | Promise<void>
   toggleFlag: (id: number) => void
@@ -142,6 +156,18 @@ export const useGameStore = create<GameState>()((set, get) => {
     ...initialState(DEFAULT_CONFIG),
 
     newGame: (config, seed) => set(initialState(config, seed)),
+
+    loadBoard: (config, mined, { seed, firstClick, guaranteed, carry }) => {
+      const { usedPowerUps, shieldActive } = get()
+      set({
+        ...initialState(config, seed),
+        board: mined,
+        startedAt: Date.now(),
+        guaranteed: guaranteed ?? null,
+        ...(carry ? { usedPowerUps, shieldActive } : {}),
+      })
+      apply(engine.reveal(mined, firstClick))
+    },
 
     reveal: (id) => {
       const { status, board, seed, config, generating, gameId } = get()
