@@ -9,7 +9,6 @@ export const REWARDS = {
   base: {
     classic: { easy: 10, medium: 25, hard: 60, custom: 10 },
     daily: { default: 50 },
-    puzzle: { default: 15 },
   },
   /** Modos por tableros: monedas por cada tablero resuelto. */
   perBoard: {
@@ -18,7 +17,8 @@ export const REWARDS = {
   },
   /** Infinito: el tablero `k` paga base × (1 + 0.1 × k), hasta ×2. */
   endlessGrowth: { step: 0.1, cap: 2 },
-  perStar: 5,
+  /** Puzzle: 10 + 2 × nivel al completarlo, +10 por cada estrella nueva. */
+  puzzle: { base: 10, perLevel: 2, perNewStar: 10 },
   /** Reto diario: +5 por día de racha, hasta 10 días. */
   dailyStreak: { perDay: 5, cap: 10 },
   loss: 2,
@@ -33,7 +33,10 @@ export interface RewardInput {
   won: boolean
   usedPowerUps: number
   isRecord: boolean
-  stars?: number
+  /** Nivel de puzzle. */
+  level?: number
+  /** Puzzle: estrellas obtenidas por primera vez en esta partida. */
+  newStars?: number
   /** Tableros resueltos en contrarreloj / infinito. */
   boards?: number
   /** Racha del reto diario, contando este día. */
@@ -44,6 +47,8 @@ export interface RewardBreakdown {
   base: number
   noPowerUpBonus: number
   recordBonus: number
+  /** Puzzle: monedas por estrellas nuevas. */
+  starBonus: number
   total: number
 }
 
@@ -66,18 +71,30 @@ function boardsReward(mode: 'timeAttack' | 'endless', n: number, d: string) {
   return Math.round(total)
 }
 
+/**
+ * Puzzle: las estrellas ya premian el récord y no usar power-ups, así que
+ * no suma esos bonus (se pagarían dos veces).
+ */
+function puzzleReward(won: boolean, level = 1, newStars = 0): RewardBreakdown {
+  const { base: b, perLevel, perNewStar } = REWARDS.puzzle
+  const base = won ? b + perLevel * level : REWARDS.loss
+  const starBonus = won ? newStars * perNewStar : 0
+  return {
+    base,
+    noPowerUpBonus: 0,
+    recordBonus: 0,
+    starBonus,
+    total: base + starBonus,
+  }
+}
+
 /** Monedas por partida: base, bonus sin power-ups y bonus por récord. */
 export function calculateReward(input: RewardInput): RewardBreakdown {
-  const {
-    mode,
-    difficulty,
-    won,
-    usedPowerUps,
-    isRecord,
-    stars,
-    boards,
-    streak,
-  } = input
+  const { mode, difficulty, won, usedPowerUps, isRecord, boards, streak } =
+    input
+  if (mode === 'puzzle') {
+    return puzzleReward(won, input.level, input.newStars)
+  }
 
   let base: number
   let succeeded: boolean
@@ -88,9 +105,7 @@ export function calculateReward(input: RewardInput): RewardBreakdown {
     base = succeeded ? boardsReward(mode, n, difficulty) : REWARDS.loss
   } else {
     succeeded = won
-    base = won
-      ? lookup(REWARDS.base[mode], difficulty) + (stars ?? 0) * REWARDS.perStar
-      : REWARDS.loss
+    base = won ? lookup(REWARDS.base[mode], difficulty) : REWARDS.loss
     if (won && mode === 'daily') {
       const { perDay, cap } = REWARDS.dailyStreak
       base += perDay * Math.min(streak ?? 0, cap)
@@ -107,6 +122,7 @@ export function calculateReward(input: RewardInput): RewardBreakdown {
     base,
     noPowerUpBonus,
     recordBonus,
+    starBonus: 0,
     total: base + noPowerUpBonus + recordBonus,
   }
 }

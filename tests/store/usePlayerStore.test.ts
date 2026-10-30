@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { recordKey, resetPlayer, usePlayerStore } from '@/store/usePlayerStore'
 import type { GameResult } from '@/store/usePlayerStore'
 import { STARTER_GIFT } from '@/lib/economy/starterGift'
+import { ALL_STARS, STAR } from '@/lib/modes/puzzle'
 
 const state = () => usePlayerStore.getState()
 
@@ -87,13 +88,41 @@ describe('usePlayerStore', () => {
       false,
     )
     const puzzle = { mode: 'puzzle', difficulty: 'default' } as const
+    const done = STAR.complete
     expect(
-      state().submitResult(win({ ...puzzle, level: 1, stars: 2 })).isRecord,
+      state().submitResult(
+        win({ ...puzzle, level: 1, stars: done | STAR.time }),
+      ).isRecord,
     ).toBe(true)
-    state().submitResult(win({ ...puzzle, level: 1, stars: 1, timeMs: 1e9 }))
+    state().submitResult(win({ ...puzzle, level: 1, stars: done, timeMs: 1e9 }))
     const rec = state().records['puzzle:default']
     expect(rec.maxLevel).toBe(1)
-    expect(rec.stars).toEqual({ 1: 2 })
+    // Las estrellas se acumulan (máscara); el puzzle no guarda mejor tiempo
+    expect(rec.stars).toEqual({ 1: done | STAR.time })
+    expect(rec.bestTimeMs).toBeUndefined()
+  })
+
+  it('puzzle: cada estrella se paga solo la primera vez', () => {
+    const level = (stars: number, over: Partial<GameResult> = {}) =>
+      state().finishGame(
+        win({
+          mode: 'puzzle',
+          difficulty: 'default',
+          level: 3,
+          stars,
+          ...over,
+        }),
+      )
+    // Completar + tiempo: 10 + 2×3 + 2×10
+    expect(level(STAR.complete | STAR.time).total).toBe(36)
+    // Repite con sin power-ups: solo esa es nueva
+    expect(level(STAR.complete | STAR.noPowerUps).total).toBe(26)
+    // Ya tiene las tres: solo la base
+    expect(level(ALL_STARS).total).toBe(16)
+    expect(state().records['puzzle:default'].stars).toEqual({ 3: ALL_STARS })
+    // Perder no toca las estrellas
+    expect(level(0, { won: false }).total).toBe(2)
+    expect(state().records['puzzle:default'].maxLevel).toBe(3)
   })
 
   it('infinito guarda aparte la mejor racha sin power-ups', () => {

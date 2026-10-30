@@ -2,6 +2,7 @@ import { generateNoGuess } from '@/lib/engine/generate'
 import type { NoGuessResult } from '@/lib/engine/generate'
 import { createRng, hashString } from '@/lib/engine/rng'
 import type { BoardConfig } from '@/lib/engine/types'
+import { generateNoGuessAsync } from '@/lib/engine/workerClient'
 import { seededFirstClick } from '@/lib/modes/boardQueue'
 import { applyVariations, VARIATIONS } from './variations'
 import type { VariationId } from './variations'
@@ -218,4 +219,20 @@ export function generateLevel(n: number): LevelBoard {
     result = generateNoGuess(current, seed, firstClick)
   }
   return { ...result, config: current }
+}
+
+/**
+ * Tablero del nivel en el worker. Con la misma config y semilla da el mismo
+ * tablero que `generateLevel`; solo si no fue sin adivinar se repite en el
+ * hilo principal, que además prueba con menos minas.
+ */
+export async function generateLevelAsync(level: number): Promise<LevelBoard> {
+  const { config, seed, firstClick } = getLevelConfig(level)
+  try {
+    const res = await generateNoGuessAsync(config, seed, firstClick)
+    if (res.guaranteed) return { ...res, config }
+  } catch {
+    // Sin worker: se genera abajo
+  }
+  return generateLevel(level)
 }

@@ -27,7 +27,13 @@ describe('calculateReward', () => {
     const r = calculateReward(
       classic({ difficulty: 'hard', won: false, usedPowerUps: 0 }),
     )
-    expect(r).toEqual({ base: 2, noPowerUpBonus: 0, recordBonus: 0, total: 2 })
+    expect(r).toEqual({
+      base: 2,
+      noPowerUpBonus: 0,
+      recordBonus: 0,
+      starBonus: 0,
+      total: 2,
+    })
   })
 
   it('+20% sin power-ups', () => {
@@ -55,6 +61,7 @@ describe('calculateReward', () => {
       base: 10,
       noPowerUpBonus: 2,
       recordBonus: 15,
+      starBonus: 0,
       total: 27,
     })
   })
@@ -117,16 +124,27 @@ describe('calculateReward', () => {
     expect(r.total).toBe(REWARDS.loss)
   })
 
-  it('puzzle suma por estrellas', () => {
-    const r = calculateReward({
-      mode: 'puzzle',
-      difficulty: 'default',
-      won: true,
-      usedPowerUps: 1,
-      isRecord: false,
-      stars: 3,
+  it('puzzle: 10 + 2 × nivel + 10 por estrella nueva, sin otros bonus', () => {
+    const puzzle = (over: Partial<RewardInput>) =>
+      calculateReward({
+        mode: 'puzzle',
+        difficulty: 'default',
+        won: true,
+        usedPowerUps: 0,
+        isRecord: true,
+        level: 7,
+        ...over,
+      })
+    expect(puzzle({ newStars: 3 })).toEqual({
+      base: 24,
+      noPowerUpBonus: 0,
+      recordBonus: 0,
+      starBonus: 30,
+      total: 54,
     })
-    expect(r.total).toBe(REWARDS.base.puzzle.default + 3 * REWARDS.perStar)
+    // Repetir un nivel ya con todas sus estrellas paga solo la base
+    expect(puzzle({ newStars: 0 }).total).toBe(24)
+    expect(puzzle({ won: false, newStars: 2 }).total).toBe(REWARDS.loss)
   })
 
   it('reto diario usa su base', () => {

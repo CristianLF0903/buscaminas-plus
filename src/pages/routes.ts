@@ -9,6 +9,8 @@ export const PAGES = {
   daily: () => import('./play/Daily'),
   timeAttack: () => import('./play/TimeAttack'),
   endless: () => import('./play/Endless'),
+  puzzleSelect: () => import('./play/PuzzleSelect'),
+  puzzleLevel: () => import('./play/PuzzleLevel'),
   shop: () => import('./Shop'),
   comingSoon: () => import('./ComingSoon'),
 }
@@ -20,5 +22,6 @@ export const PREFETCH_BY_PATH: Partial<Record<string, () => Promise<unknown>>> =
     '/play/daily': PAGES.daily,
     '/play/time-attack': PAGES.timeAttack,
     '/play/endless': PAGES.endless,
+    '/play/puzzle': PAGES.puzzleSelect,
     '/shop': PAGES.shop,
   }

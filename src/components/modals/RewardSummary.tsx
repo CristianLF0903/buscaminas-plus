@@ -7,10 +7,12 @@ export default function RewardSummary({ reward }: { reward: FinishedReward }) {
     ['Partida', reward.base],
     ['Sin power-ups', reward.noPowerUpBonus],
     ['Récord', reward.recordBonus],
+    ['Estrellas nuevas', reward.starBonus],
   ]
   return (
     <div className="flex flex-col items-center gap-2 rounded-xl bg-slate-900/60 p-3">
-      {reward.isRecord && (
+      {/* El puzzle marca sus estrellas nuevas aparte */}
+      {reward.recordBonus > 0 && (
         <span className="rounded-full bg-amber-400/15 px-3 py-0.5 text-xs font-bold tracking-wide text-amber-300 uppercase">
           ¡Nuevo récord!
         </span>

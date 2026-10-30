@@ -46,7 +46,7 @@ const MODES: Mode[] = [
     icon: '🧩',
     title: 'Puzzle',
     description: 'Niveles con formas y reglas nuevas.',
-    ready: false,
+    ready: true,
   },
 ]
 

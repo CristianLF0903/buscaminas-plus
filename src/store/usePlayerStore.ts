@@ -4,6 +4,7 @@ import { POWER_UP_PRICES } from '@/lib/economy/prices'
 import { calculateReward } from '@/lib/economy/rewards'
 import { STARTER_GIFT } from '@/lib/economy/starterGift'
 import { streakAt } from '@/lib/modes/daily'
+import { countStars, newStarsOf } from '@/lib/modes/puzzle'
 import type { DailyEntry } from '@/lib/modes/daily'
 import type { GameMode, RewardBreakdown } from '@/lib/economy/rewards'
 import { POWER_UP_IDS } from '@/lib/powerups/ids'
@@ -17,7 +18,7 @@ export interface ModeRecord {
   /** Racha de días (reto diario). */
   bestStreak?: number
   maxLevel?: number
-  /** Estrellas por nivel de puzzle. */
+  /** Estrellas por nivel de puzzle (bitmask de `STAR`). */
   stars?: Record<number, number>
 }
 
@@ -37,6 +38,7 @@ export interface GameResult {
   usedPowerUps: number
   boards?: number
   level?: number
+  /** Puzzle: estrellas de esta partida (bitmask de `STAR`). */
   stars?: number
   streak?: number
   /** Reto diario: fecha UTC del reto y grilla para compartir. */
@@ -120,6 +122,8 @@ function updateRecord(
       r.won &&
       r.mode !== 'timeAttack' &&
       r.mode !== 'endless' &&
+      // Un tiempo por todos los niveles no compara nada
+      r.mode !== 'puzzle' &&
       (record.bestTimeMs === undefined || r.timeMs < record.bestTimeMs)
     ) {
       record.bestTimeMs = r.timeMs
@@ -133,9 +137,11 @@ function updateRecord(
     improve('bestStreak', r.streak)
     if (r.won) improve('maxLevel', r.level)
     if (r.won && r.level !== undefined && r.stars !== undefined) {
+      // Se acumulan: el tiempo en una partida y sin power-ups en otra
       const prevStars = record.stars?.[r.level] ?? 0
-      if (r.stars > prevStars) {
-        record.stars = { ...record.stars, [r.level]: r.stars }
+      const merged = prevStars | r.stars
+      if (merged !== prevStars) {
+        record.stars = { ...record.stars, [r.level]: merged }
         isRecord = true
       }
     }
@@ -223,8 +229,15 @@ export const usePlayerStore = create<PlayerState>()(
           set({ daily })
           result = { ...input, streak: entry.streak }
         }
+        let newStars = 0
+        if (input.mode === 'puzzle' && input.level !== undefined) {
+          // Antes de guardar: solo se pagan las estrellas que no tenía
+          const key = recordKey(input.mode, input.difficulty)
+          const prev = get().records[key]?.stars?.[input.level] ?? 0
+          newStars = countStars(newStarsOf(prev, input.stars ?? 0))
+        }
         const { isRecord } = get().submitResult(result)
-        const reward = calculateReward({ ...result, isRecord })
+        const reward = calculateReward({ ...result, isRecord, newStars })
         get().addCoins(reward.total)
         return { ...reward, isRecord }
       },

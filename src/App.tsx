@@ -12,13 +12,13 @@ const Classic = lazy(PAGES.classic)
 const Daily = lazy(PAGES.daily)
 const TimeAttack = lazy(PAGES.timeAttack)
 const Endless = lazy(PAGES.endless)
+const PuzzleSelect = lazy(PAGES.puzzleSelect)
+const PuzzleLevel = lazy(PAGES.puzzleLevel)
 const Shop = lazy(PAGES.shop)
 const ComingSoon = lazy(PAGES.comingSoon)
 
 // Rutas del plan aún sin implementar
 const PENDING: [path: string, title: string][] = [
-  ['/play/puzzle', 'Puzzle'],
-  ['/play/puzzle/:level', 'Puzzle'],
   ['/stats', 'Estadísticas'],
   ['/settings', 'Ajustes'],
 ]
@@ -58,6 +58,8 @@ function App() {
             <Route path="/play/daily" component={Daily} />
             <Route path="/play/time-attack" component={TimeAttack} />
             <Route path="/play/endless" component={Endless} />
+            <Route path="/play/puzzle" component={PuzzleSelect} />
+            <Route path="/play/puzzle/:level" component={PuzzleLevel} />
             <Route path="/shop" component={Shop} />
             {PENDING.map(([path, title]) => (
               <Route key={path} path={path}>
