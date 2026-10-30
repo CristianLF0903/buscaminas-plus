@@ -11,6 +11,8 @@ import type { PowerUpId } from '@/lib/powerups/ids'
 export interface ModeRecord {
   bestTimeMs?: number
   maxBoards?: number
+  /** Infinito: mejor racha sin usar power-ups (dato extra, no da bonus). */
+  maxBoardsNoPowerUps?: number
   /** Racha de días (reto diario). */
   bestStreak?: number
   maxLevel?: number
@@ -118,6 +120,10 @@ function updateRecord(
       isRecord = true
     }
     improve('maxBoards', r.boards)
+    const clean = r.mode === 'endless' && r.usedPowerUps === 0
+    if (clean && r.boards && r.boards > (record.maxBoardsNoPowerUps ?? 0)) {
+      record.maxBoardsNoPowerUps = r.boards
+    }
     improve('bestStreak', r.streak)
     if (r.won) improve('maxLevel', r.level)
     if (r.won && r.level !== undefined && r.stars !== undefined) {

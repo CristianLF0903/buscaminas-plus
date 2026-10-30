@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
-import { generateNoGuess } from '@/lib/engine/generate'
-import type { NoGuessResult } from '@/lib/engine/generate'
-import { generateNoGuessAsync } from '@/lib/engine/workerClient'
+import { createBoardQueue } from '@/lib/modes/boardQueue'
+import type { PreparedBoard } from '@/lib/modes/boardQueue'
 import {
   addTime,
   boardFailed,
-  boardFirstClick,
   boardSeed,
   boardSolved,
   createSession,
@@ -48,8 +46,11 @@ function createRun(sessionSeed: number, cb: RunCallbacks) {
   let session = createSession()
   let current = 0
   let changeId = 0
-  const pending = new Map<number, Promise<NoGuessResult>>()
-  const ready = new Map<number, NoGuessResult>()
+  // Desmontado: un `start` en vuelo ya no debe cargar su tablero
+  let disposed = false
+  const queue = createBoardQueue(TIME_ATTACK_CONFIG, (n) =>
+    boardSeed(sessionSeed, n),
+  )
 
   const update = (
     fn: (s: TimeAttackSession, now: number) => TimeAttackSession,
@@ -76,32 +77,15 @@ function createRun(sessionSeed: number, cb: RunCallbacks) {
 
   const flash = (ms: number) => cb.onChange({ id: ++changeId, ms })
 
-  const preload = (n: number) => {
-    let p = pending.get(n)
-    if (!p) {
-      const seed = boardSeed(sessionSeed, n)
-      const first = boardFirstClick(seed)
-      p = generateNoGuessAsync(TIME_ATTACK_CONFIG, seed, first)
-        // Sin worker: 8×8 es lo bastante chico para el hilo principal
-        .catch(() => generateNoGuess(TIME_ATTACK_CONFIG, seed, first))
-        .then((r) => {
-          ready.set(n, r)
-          return r
-        })
-      pending.set(n, p)
-    }
-    return p
-  }
+  const preload = queue.preload
 
-  const play = (n: number, result: NoGuessResult) => {
+  const play = (n: number, next: PreparedBoard) => {
     current = n
-    ready.delete(n - 1)
-    pending.delete(n - 1)
-    const seed = boardSeed(sessionSeed, n)
-    useGameStore.getState().loadBoard(TIME_ATTACK_CONFIG, result.board, {
-      seed,
-      firstClick: boardFirstClick(seed),
-      guaranteed: result.guaranteed,
+    queue.drop(n - 1)
+    useGameStore.getState().loadBoard(TIME_ATTACK_CONFIG, next.board, {
+      seed: next.seed,
+      firstClick: next.firstClick,
+      guaranteed: next.guaranteed,
       carry: n > 1,
     })
     cb.onBoard(n)
@@ -111,7 +95,7 @@ function createRun(sessionSeed: number, cb: RunCallbacks) {
   const advance = () => {
     if (session.status !== 'running') return
     const n = current + 1
-    const result = ready.get(n)
+    const result = queue.get(n)
     if (result) {
       play(n, result)
       return
@@ -152,10 +136,12 @@ function createRun(sessionSeed: number, cb: RunCallbacks) {
   return {
     /** Suscribe al store y pre-genera el primero. Devuelve el cleanup. */
     mount() {
+      disposed = false
       void preload(1).then(() => cb.onFirstReady())
       const unsubscribe = useGameStore.subscribe(onGame)
       const timer = setInterval(() => update(tick), TICK_MS)
       return () => {
+        disposed = true
         unsubscribe()
         clearInterval(timer)
         // Salir a mitad de sesión la termina: cuenta lo resuelto
@@ -166,7 +152,7 @@ function createRun(sessionSeed: number, cb: RunCallbacks) {
     async start() {
       if (session.status !== 'idle') return
       const first = await preload(1)
-      if (session.status !== 'idle') return
+      if (disposed || session.status !== 'idle') return
       update(startSession)
       play(1, first)
     },

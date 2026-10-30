@@ -155,7 +155,11 @@ describe('loadBoard', () => {
     const { board } = state()
     return {
       ...board,
-      cells: board.cells.map((c) => ({ ...c, revealed: false, flagged: false })),
+      cells: board.cells.map((c) => ({
+        ...c,
+        revealed: false,
+        flagged: false,
+      })),
     }
   }
 
@@ -178,6 +182,18 @@ describe('loadBoard', () => {
     state().loadBoard(config, board, { seed: 'b', firstClick: 40 })
     expect(state().usedPowerUps).toBe(0)
     expect(state().shieldActive).toBe(false)
+  })
+
+  it('con keepShield conserva solo el escudo', () => {
+    const board = mined()
+    useGameStore.setState({ usedPowerUps: 3, shieldActive: true })
+    state().loadBoard(config, board, {
+      seed: 'a',
+      firstClick: 40,
+      keepShield: true,
+    })
+    expect(state().usedPowerUps).toBe(0)
+    expect(state().shieldActive).toBe(true)
   })
 
   it('cada tablero es una partida nueva (gameId distinto)', () => {

@@ -53,6 +53,7 @@ export interface GameState {
   /**
    * Arranca con un tablero ya minado (pre-generado) abriendo `firstClick`.
    * `carry` conserva power-ups usados y escudo: varios tableros, una partida.
+   * `keepShield` conserva solo el escudo (límite de power-ups por tablero).
    */
   loadBoard: (
     config: BoardConfig,
@@ -62,6 +63,7 @@ export interface GameState {
       firstClick: number
       guaranteed?: boolean | null
       carry?: boolean
+      keepShield?: boolean
     },
   ) => void
   /** Asíncrono solo en el primer clic con `config.noGuess`. */
@@ -157,14 +159,16 @@ export const useGameStore = create<GameState>()((set, get) => {
 
     newGame: (config, seed) => set(initialState(config, seed)),
 
-    loadBoard: (config, mined, { seed, firstClick, guaranteed, carry }) => {
+    loadBoard: (config, mined, opts) => {
+      const { seed, firstClick, guaranteed, carry, keepShield } = opts
       const { usedPowerUps, shieldActive } = get()
       set({
         ...initialState(config, seed),
         board: mined,
         startedAt: Date.now(),
         guaranteed: guaranteed ?? null,
-        ...(carry ? { usedPowerUps, shieldActive } : {}),
+        ...(carry ? { usedPowerUps } : {}),
+        ...(carry || keepShield ? { shieldActive } : {}),
       })
       apply(engine.reveal(mined, firstClick))
     },

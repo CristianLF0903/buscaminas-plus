@@ -1,6 +1,5 @@
-import { index } from '@/lib/engine/graph'
-import { createRng } from '@/lib/engine/rng'
 import type { BoardConfig } from '@/lib/engine/types'
+import { seededFirstClick } from './boardQueue'
 
 /** Tableros pequeños sin adivinar: se resuelven en segundos. */
 export const TIME_ATTACK_CONFIG: BoardConfig = {
@@ -28,18 +27,9 @@ export function solveBonusMs(n: number): number {
 export const boardSeed = (sessionSeed: number | string, n: number) =>
   `${sessionSeed}:ta:${n}`
 
-/**
- * Primer clic fijo, derivado de la semilla: así el tablero se puede generar
- * antes de que el jugador haga clic. Lejos de los bordes para abrir área.
- */
-export function boardFirstClick(seed: number | string): number {
-  const { width, height } = TIME_ATTACK_CONFIG
-  const rng = createRng(`${seed}:first`)
-  const margin = 2
-  const x = rng.int(margin, width - 1 - margin)
-  const y = rng.int(margin, height - 1 - margin)
-  return index(x, y, width)
-}
+/** Primer clic fijo del tablero, ver `seededFirstClick`. */
+export const boardFirstClick = (seed: number | string) =>
+  seededFirstClick(TIME_ATTACK_CONFIG, seed)
 
 export type SessionStatus = 'idle' | 'running' | 'paused' | 'over'
 

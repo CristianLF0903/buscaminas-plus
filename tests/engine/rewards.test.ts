@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { calculateReward, REWARDS } from '@/lib/economy/rewards'
+import {
+  calculateReward,
+  endlessMultiplier,
+  REWARDS,
+} from '@/lib/economy/rewards'
 import type { RewardInput } from '@/lib/economy/rewards'
 
 const classic = (over: Partial<RewardInput> = {}): RewardInput => ({
@@ -64,7 +68,8 @@ describe('calculateReward', () => {
       isRecord: false,
       boards: 3,
     })
-    expect(endless.total).toBe(3 * REWARDS.perBoard.endless.medium)
+    // 12 × (1.1 + 1.2 + 1.3) = 43.2
+    expect(endless.total).toBe(43)
 
     const timeAttack = calculateReward({
       mode: 'timeAttack',
@@ -76,6 +81,28 @@ describe('calculateReward', () => {
     })
     expect(timeAttack.base).toBe(20)
     expect(timeAttack.noPowerUpBonus).toBe(4)
+  })
+
+  it('infinito: multiplicador crece 0.1 por tablero hasta ×2', () => {
+    expect(endlessMultiplier(1)).toBe(1.1)
+    expect(endlessMultiplier(3)).toBe(1.3)
+    expect(endlessMultiplier(10)).toBe(2)
+    expect(endlessMultiplier(50)).toBe(REWARDS.endlessGrowth.cap)
+  })
+
+  it('infinito: los tableros pasado el tope pagan ×2', () => {
+    const reward = (boards: number) =>
+      calculateReward({
+        mode: 'endless',
+        difficulty: 'easy',
+        won: false,
+        usedPowerUps: 1,
+        isRecord: false,
+        boards,
+      }).base
+    // 5 × (1.1 + … + 2.0) = 77.5
+    expect(reward(10)).toBe(78)
+    expect(reward(11) - reward(10)).toBe(10)
   })
 
   it('cero tableros da el mínimo', () => {

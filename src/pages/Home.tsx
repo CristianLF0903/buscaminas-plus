@@ -36,7 +36,7 @@ const MODES: Mode[] = [
     icon: '♾️',
     title: 'Infinito',
     description: 'Tableros seguidos hasta que caigas.',
-    ready: false,
+    ready: true,
   },
   {
     href: '/play/puzzle',

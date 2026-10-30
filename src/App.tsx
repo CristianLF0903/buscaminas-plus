@@ -6,12 +6,12 @@ const Home = lazy(() => import('@/pages/Home'))
 const Classic = lazy(() => import('@/pages/play/Classic'))
 const Daily = lazy(() => import('@/pages/play/Daily'))
 const TimeAttack = lazy(() => import('@/pages/play/TimeAttack'))
+const Endless = lazy(() => import('@/pages/play/Endless'))
 const Shop = lazy(() => import('@/pages/Shop'))
 const ComingSoon = lazy(() => import('@/pages/ComingSoon'))
 
 // Rutas del plan aún sin implementar
 const PENDING: [path: string, title: string][] = [
-  ['/play/endless', 'Infinito'],
   ['/play/puzzle', 'Puzzle'],
   ['/play/puzzle/:level', 'Puzzle'],
   ['/stats', 'Estadísticas'],
@@ -45,6 +45,7 @@ function App() {
             <Route path="/play/classic" component={Classic} />
             <Route path="/play/daily" component={Daily} />
             <Route path="/play/time-attack" component={TimeAttack} />
+            <Route path="/play/endless" component={Endless} />
             <Route path="/shop" component={Shop} />
             {PENDING.map(([path, title]) => (
               <Route key={path} path={path}>

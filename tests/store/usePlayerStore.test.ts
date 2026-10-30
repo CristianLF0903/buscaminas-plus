@@ -95,6 +95,23 @@ describe('usePlayerStore', () => {
     expect(rec.stars).toEqual({ 1: 2 })
   })
 
+  it('infinito guarda aparte la mejor racha sin power-ups', () => {
+    const endless = { mode: 'endless', difficulty: 'easy', won: false } as const
+    state().submitResult(win({ ...endless, boards: 5, usedPowerUps: 2 }))
+    state().submitResult(win({ ...endless, boards: 3 }))
+    let rec = state().records[recordKey('endless', 'easy')]
+    expect(rec.maxBoards).toBe(5)
+    expect(rec.maxBoardsNoPowerUps).toBe(3)
+
+    // Mejora solo la racha limpia: dato extra, no cuenta como récord
+    expect(state().submitResult(win({ ...endless, boards: 4 })).isRecord).toBe(
+      false,
+    )
+    rec = state().records[recordKey('endless', 'easy')]
+    expect(rec.maxBoards).toBe(5)
+    expect(rec.maxBoardsNoPowerUps).toBe(4)
+  })
+
   it('stats y racha de victorias', () => {
     state().submitResult(win())
     state().submitResult(win())
